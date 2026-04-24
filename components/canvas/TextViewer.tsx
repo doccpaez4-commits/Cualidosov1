@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useProjectContext } from '@/components/ProjectProvider';
-import { db } from '@/lib/db';
+import { db, addEncryptedAnnotation, addEncryptedMemo } from '@/lib/db';
 import type { Annotation, Code } from '@/types';
 import { MessageSquare, X } from 'lucide-react';
 
@@ -74,7 +74,7 @@ export default function TextViewer() {
   async function annotateSelection(codeId: number) {
     if (!selectionInfo || !activeDocumentId || !project) return;
 
-    await db.annotations.add({
+    await addEncryptedAnnotation({
       documentId: activeDocumentId,
       projectId: project.id!,
       codeId,
@@ -90,7 +90,7 @@ export default function TextViewer() {
 
   async function saveMemo() {
     if (!memoText.trim() || !memoPopup || !project) return;
-    await db.memos.add({
+    await addEncryptedMemo({
       annotationId: memoPopup.annotationId,
       projectId: project.id!,
       content: memoText.trim(),

@@ -4,10 +4,11 @@ export type LenteType =
   | 'phenomenology'  // Fenomenología
   | 'ethnography'    // Etnografía (Geertz)
   | 'iap'            // Investigación-Acción Participativa (Fals Borda)
-  | 'breilh';        // Metacrítica / Epidemiología Crítica (Breilh)
+  | 'breilh'         // Metacrítica / Epidemiología Crítica (Breilh)
+  | 'free';          // Práctica Libre (sin metodología definida)
 
 // Dominio de clasificación según la Metacrítica de Breilh
-export type BreilhDomain = 'general' | 'particular' | 'singular';
+export type BreilhDomain = 'general' | 'particular' | 'individual' | 'none';
 
 // Fase de codificación en Teoría Fundamentada
 export type GroundedPhase = 'open' | 'axial' | 'selective';
@@ -42,7 +43,10 @@ export interface Category {
   projectId: number;
   name: string;
   color: string;
+  description?: string; // Memo o explicación del autor
   parentId?: number;      // para categorías anidadas
+  domain?: BreilhDomain;  // Solo para lente Breilh (Dimensión)
+  position?: { x: number; y: number }; // Para persistencia en el mapa d3
 }
 
 export interface Code {
@@ -52,9 +56,11 @@ export interface Code {
   name: string;
   color: string;          // hex color
   description?: string;
-  domain?: BreilhDomain;            // Solo para lente Breilh
+  breilhType?: 'protector' | 'malsano' | 'none'; // Proceso protector/malsano
+  sDeLaVida?: 'soberania' | 'sustentabilidad' | 'seguridad' | 'solidaridad' | 'none'; // Las 4 S de la vida
   groundedPhase?: GroundedPhase;    // Solo para lente Grounded
   annotationCount?: number;         // cache de conteo
+  position?: { x: number; y: number }; // Para persistencia en el mapa d3
 }
 
 export interface Annotation {
@@ -129,9 +135,14 @@ export interface VerbatimResult {
   documentId: number;
   documentName: string;
   text: string;
+  codeId: number;
   codeName: string;
   codeColor: string;
   categoryName?: string;
+  domain?: BreilhDomain;
+  breilhType?: 'protector' | 'malsano' | 'none';
+  sDeLaVida?: 'soberania' | 'sustentabilidad' | 'seguridad' | 'solidaridad' | 'none';
+  memos?: Memo[];
 }
 
 export interface ConcurrenceCell {

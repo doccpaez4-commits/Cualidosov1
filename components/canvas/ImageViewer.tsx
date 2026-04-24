@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useProjectContext } from '@/components/ProjectProvider';
-import { db } from '@/lib/db';
+import { db, addEncryptedAnnotation } from '@/lib/db';
 import { createImageUrl } from '@/lib/fileProcessor';
 import type { Annotation, Code, PolygonPoint } from '@/types';
 import { X, Check } from 'lucide-react';
@@ -37,7 +37,7 @@ export default function ImageViewer() {
     const anns = await db.annotations
       .where('documentId').equals(activeDocumentId)
       .filter(a => !!a.polygons).toArray();
-    const codeList = await db.codes.bulkGet([...new Set(anns.map(a => a.codeId))]);
+    const codeList = await db.codes.bulkGet(Array.from(new Set(anns.map(a => a.codeId))));
     const codeMap = new Map(codeList.filter(Boolean).map(c => [c!.id!, c!]));
     setAnnotations(anns.filter(a => codeMap.has(a.codeId)).map(a => ({ annotation: a, code: codeMap.get(a.codeId)! })));
   }, [activeDocumentId]);
@@ -115,7 +115,7 @@ export default function ImageViewer() {
 
   async function savePolygon() {
     if (currentPolygon.length < 3 || !activeCodeId || !activeDocumentId || !project) return;
-    await db.annotations.add({
+    await addEncryptedAnnotation({
       documentId: activeDocumentId,
       projectId: project.id!,
       codeId: activeCodeId,

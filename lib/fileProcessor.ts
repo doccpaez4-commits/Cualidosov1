@@ -42,9 +42,63 @@ export async function processPdf(file: File): Promise<string> {
   return textPages.join('\n\n');
 }
 
-/** Convierte una imagen a ArrayBuffer para almacenar en IndexedDB */
+/** 
+ * Comprime una imagen usando Canvas.
+ * - Max ancho: 1920px
+ * - Formato: WebP
+ * - Calidad: 0.8
+ */
+export async function compressImage(file: File): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Redimensionar si es muy grande
+        const MAX_WIDTH = 1920;
+        if (width > MAX_WIDTH) {
+          height = (MAX_WIDTH / width) * height;
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          async (blob) => {
+            if (blob) {
+              resolve(await blob.arrayBuffer());
+            } else {
+              reject(new Error('Error al comprimir imagen'));
+            }
+          },
+          'image/webp',
+          0.8
+        );
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+  });
+}
+
+/** Procesa la imagen aplicando compresión antes de retornar el ArrayBuffer */
 export async function processImage(file: File): Promise<ArrayBuffer> {
-  return file.arrayBuffer();
+  // Solo comprimimos si el navegador soporta Canvas (siempre en navegadores modernos)
+  try {
+    return await compressImage(file);
+  } catch (e) {
+    console.warn('Fallo compresión, guardando original', e);
+    return file.arrayBuffer();
+  }
 }
 
 /** Crea una URL temporal para visualizar un ArrayBuffer de imagen */

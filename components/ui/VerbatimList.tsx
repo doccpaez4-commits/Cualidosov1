@@ -42,6 +42,19 @@ export default function VerbatimList({ verbatims, onClose }: Props) {
                 </span>
               )}
             </div>
+            {/* Memos del Mentor */}
+            {v.memos && v.memos.length > 0 && (
+              <div className="mt-2 pt-2 border-t space-y-1.5" style={{ borderColor: 'var(--border)' }}>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-500 flex items-center gap-1">
+                  ✎ Memos del Mentor
+                </span>
+                {v.memos.map(memo => (
+                  <div key={memo.id} className="text-[11px] p-2 rounded leading-relaxed bg-indigo-50 text-indigo-900 border border-indigo-100">
+                    {memo.content}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>

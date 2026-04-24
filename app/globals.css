@@ -28,19 +28,24 @@
   --breilh-singular:   #b45309;
 }
 
-/* ── Base ────────────────────────────────────────────────────────────────── */
-* { box-sizing: border-box; }
+/* ── Fluid Typography (responsiva por viewport) ─────────────────────────── */
+/* Scale: 12px @ 320px → 14px @ 1280px → 16px @ 1920px */
+:root {
+  font-size: clamp(12px, 0.875rem + 0.25vw, 16px);
+}
 
 html, body {
   margin: 0; padding: 0;
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 14px;
-  line-height: 1.6;
+  /* Fluid base: 13px en pantallas medianas, escala suavemente */
+  font-size: clamp(12px, calc(11px + 0.3vw), 15px);
+  line-height: 1.65;
   height: 100%;
   overflow: hidden;
 }
+
 
 #__next, main { height: 100%; }
 
@@ -339,4 +344,74 @@ textarea.input { resize: vertical; min-height: 80px; }
   color: var(--text-muted);
   text-align: center;
 }
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 50px 20px; color: var(--text-muted); text-align: center; }
 .empty-state svg { opacity: 0.3; }
+
+/* ── Responsive: Pantallas pequeñas (móvil) ─────────────────────────────── */
+@media (max-width: 768px) {
+  .app-layout {
+    grid-template-columns: 220px 1fr; /* Sidebar más compacto */
+    grid-template-rows: 52px 1fr;
+  }
+
+  /* Ocultar mentor en móvil (se puede expandir con un botón) */
+  .sidebar-right { display: none; }
+
+  .app-header {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .section-header {
+    padding: 10px 12px;
+    font-size: 10px;
+  }
+
+  .btn { padding: 6px 12px; font-size: 12px; }
+  .input { padding: 8px 10px; font-size: 12px; }
+  .card { padding: 14px; }
+  .modal { padding: 20px; border-radius: 14px; }
+}
+
+/* ── Responsive: Pantallas muy pequeñas ────────────────────────────────── */
+@media (max-width: 480px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 52px auto 1fr;
+  }
+
+  .sidebar-left {
+    max-height: 200px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+/* ── Responsive: Pantallas muy grandes (≥1600px) ────────────────────────── */
+@media (min-width: 1600px) {
+  .app-layout {
+    grid-template-columns: 310px 1fr 380px;
+    grid-template-rows: 64px 1fr;
+  }
+
+  .btn { font-size: 14px; }
+  .input { font-size: 14px; }
+  .tab { padding: 12px 22px; font-size: 14px; }
+  .section-header { padding: 16px 20px; font-size: 12px; }
+  .code-tree-item { font-size: 14px; padding: 8px 12px; }
+}
+
+/* ── Responsive: pantallas 4K / ultrawide ──────────────────────────────── */
+@media (min-width: 2400px) {
+  :root { font-size: clamp(14px, 0.8vw, 20px); }
+  .app-layout { grid-template-columns: 360px 1fr 440px; }
+}
+
+/* ── Utilidades de scroll ───────────────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Animaciones de entrada con scale ──────────────────────────────────── */
+.animate-scale-in { animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.animate-fade-in  { animation: fadeIn 0.2s ease; }
+

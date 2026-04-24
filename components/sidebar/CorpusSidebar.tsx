@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useProjectContext } from '@/components/ProjectProvider';
 import { db } from '@/lib/db';
 import { processFile, ACCEPTED_FILE_TYPES } from '@/lib/fileProcessor';
 import {
   FileText, Image, Upload, Trash2, File,
-  ChevronDown, ChevronRight, Loader
+  ChevronDown, ChevronRight, Loader, HardDrive
 } from 'lucide-react';
 import type { Document } from '@/types';
 
@@ -16,6 +16,17 @@ export default function CorpusSidebar() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(true);
+  const [storageUsage, setStorageUsage] = useState<number>(0);
+
+  useEffect(() => {
+    if (navigator.storage && navigator.storage.estimate) {
+      navigator.storage.estimate().then(estimate => {
+        if (estimate.usage && estimate.quota) {
+          setStorageUsage((estimate.usage / estimate.quota) * 100);
+        }
+      });
+    }
+  }, [documents.length]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (!project) return;
@@ -139,6 +150,27 @@ export default function CorpusSidebar() {
             <File size={32} />
             <p className="text-xs">Importa tu primer documento</p>
           </div>
+        )}
+      </div>
+
+      {/* Storage Monitor */}
+      <div className="flex-shrink-0 p-3 border-t flex flex-col gap-1" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex items-center justify-between text-xs" style={{ color: storageUsage > 80 ? 'var(--rose)' : 'var(--text-muted)' }}>
+          <span className="flex items-center gap-1"><HardDrive size={12}/> Almacenamiento Local</span>
+          <span>{storageUsage.toFixed(1)}%</span>
+        </div>
+        <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+          <div className="h-full transition-all" 
+            style={{ 
+              width: `${storageUsage}%`, 
+              background: storageUsage > 80 ? 'var(--rose)' : 'var(--accent)' 
+            }} 
+          />
+        </div>
+        {storageUsage > 80 && (
+          <p className="text-[10px] mt-1" style={{ color: 'var(--rose)' }}>
+            Límite cercano. Depura archivos innecesarios.
+          </p>
         )}
       </div>
     </aside>

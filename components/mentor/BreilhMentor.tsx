@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Project, BreilhDomain } from '@/types';
-import { db } from '@/lib/db';
+import { db, addEncryptedMemo } from '@/lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Plus, Box } from 'lucide-react';
 
@@ -36,7 +36,7 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
 
   async function saveMemo() {
     if (!memoContent.trim()) return;
-    await db.memos.add({
+    await addEncryptedMemo({
       projectId: project.id!, annotationId: selectedAnnotationId,
       content: `[${selectedDomain.toUpperCase()}] ${memoContent.trim()}`,
       createdAt: new Date(), updatedAt: new Date(),
@@ -57,6 +57,12 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
       <div className="mentor-quote">
         "La determinación social de la salud no es la suma de factores de riesgo, sino el movimiento contradictorio de procesos en tres dominios de existencia."
         <div className="mt-1 text-right text-xs font-semibold" style={{ color: '#ef4444' }}>— Jaime Breilh, 2003</div>
+      </div>
+
+      <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+        <strong className="text-blue-800">💡 Análisis y Meta-Inferencia:</strong><br />
+        Las transcripciones de entrevistas (relatos biográficos) suelen saturar el dominio <strong>Singular y Particular</strong>.<br /><br />
+        <span className="text-blue-600">Para el dominio <strong>General</strong>, recurra a fuentes de datos estructurados, históricos o bibliográficos. Recuerde confrontar estos hallazgos con datos cuantitativos (perfil epidemiológico) para lograr una correcta meta-inferencia cuali-cuanti.</span>
       </div>
 
       {/* Matriz de Triple Determinación */}

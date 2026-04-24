@@ -10,6 +10,7 @@ import type {
   FieldNote,
   IAPCycle,
 } from '@/types';
+import { encryptText, decryptText } from '@/lib/crypto';
 
 export class CualidosoDB extends Dexie {
   projects!: Table<Project, number>;
@@ -22,10 +23,10 @@ export class CualidosoDB extends Dexie {
   fieldNotes!: Table<FieldNote, number>;
   iapCycles!: Table<IAPCycle, number>;
 
-  constructor() {
-    super('CualidosoDB');
+  constructor(dbName: string) {
+    super(dbName);
 
-    this.version(2).stores({
+    this.version(4).stores({
       // Proyectos: índice por nombre
       projects: '++id, name, lente, createdAt, updatedAt',
 
@@ -33,10 +34,10 @@ export class CualidosoDB extends Dexie {
       documents: '++id, projectId, name, type, createdAt',
 
       // Categorías: índice por proyecto, con soporte de jerarquía
-      categories: '++id, projectId, parentId, name',
+      categories: '++id, projectId, parentId, name, domain',
 
-      // Códigos: índice por proyecto, categoría y dominio (Breilh)
-      codes: '++id, projectId, categoryId, name, domain, groundedPhase',
+      // Códigos: índice por proyecto, categoría
+      codes: '++id, projectId, categoryId, name, sDeLaVida, groundedPhase',
 
       // Anotaciones: índice por documento y código (para concurrencia)
       annotations: '++id, documentId, projectId, codeId, createdAt',
@@ -56,8 +57,24 @@ export class CualidosoDB extends Dexie {
   }
 }
 
+// Obtenemos el usuario activo
+const activeUser = typeof window !== 'undefined' ? localStorage.getItem('cualidoso_active_user') : null;
+const dbName = activeUser ? `CualidosoDB_${activeUser}` : 'CualidosoDB_offline';
+
 // Singleton exportado - se usa en toda la app
-export const db = new CualidosoDB();
+export const db = new CualidosoDB(dbName);
+
+// ─── Helpers Criptográficos para Escritura ────────────────────────────────────
+
+export async function addEncryptedAnnotation(annotation: Annotation): Promise<number> {
+  const encText = await encryptText(annotation.text || '');
+  return db.annotations.add({ ...annotation, text: encText });
+}
+
+export async function addEncryptedMemo(memo: Memo): Promise<number> {
+  const encContent = await encryptText(memo.content || '');
+  return db.memos.add({ ...memo, content: encContent });
+}
 
 // ─── Helpers de utilidad ──────────────────────────────────────────────────────
 
@@ -96,10 +113,10 @@ export async function getDocumentAnnotations(documentId: number) {
   const codes = await db.codes.bulkGet(codeIds);
   const codeMap = new Map(codes.filter(Boolean).map((c) => [c!.id!, c!]));
 
-  return annotations.map((a) => ({
-    annotation: a,
+  return Promise.all(annotations.map(async (a) => ({
+    annotation: { ...a, text: await decryptText(a.text || '') },
     code: codeMap.get(a.codeId)!,
-  }));
+  })));
 }
 
 /** Obtiene verbatims de un proyecto completo para el dashboard */
@@ -109,33 +126,53 @@ export async function getAllVerbatims(projectId: number) {
     .equals(projectId)
     .toArray();
 
-  const [codes, documents, categories] = await Promise.all([
+  const [codes, documents, categories, memos] = await Promise.all([
     db.codes.where('projectId').equals(projectId).toArray(),
     db.documents.where('projectId').equals(projectId).toArray(),
     db.categories.where('projectId').equals(projectId).toArray(),
+    db.memos.where('projectId').equals(projectId).toArray(),
   ]);
 
   const codeMap = new Map(codes.map((c) => [c.id!, c]));
   const docMap = new Map(documents.map((d) => [d.id!, d]));
   const catMap = new Map(categories.map((c) => [c.id!, c]));
+  
+  // Agrupar memos por annotationId
+  const memoMap = new Map<number, Memo[]>();
+  memos.forEach(m => {
+    if (m.annotationId) {
+      if (!memoMap.has(m.annotationId)) memoMap.set(m.annotationId, []);
+      memoMap.get(m.annotationId)!.push(m);
+    }
+  });
 
-  return annotations
+  return Promise.all(annotations
     .filter((a) => a.text)
-    .map((a) => {
+    .map(async (a) => {
       const code = codeMap.get(a.codeId);
       const doc = docMap.get(a.documentId);
       const cat = code?.categoryId ? catMap.get(code.categoryId) : undefined;
+      
+      const decryptedMemos = await Promise.all((memoMap.get(a.id!) || []).map(async m => ({
+        ...m,
+        content: await decryptText(m.content)
+      })));
+
       return {
         annotationId: a.id!,
         documentId: a.documentId,
         documentName: doc?.name ?? 'Documento desconocido',
-        text: a.text ?? '',
+        text: await decryptText(a.text ?? ''),
+        codeId: a.codeId,
         codeName: code?.name ?? 'Sin código',
         codeColor: code?.color ?? '#888',
         categoryName: cat?.name,
-        domain: code?.domain,
+        domain: cat?.domain,
+        breilhType: code?.breilhType,
+        sDeLaVida: code?.sDeLaVida,
+        memos: decryptedMemos,
       };
-    });
+    }));
 }
 
 /** Exporta el proyecto completo a un objeto serializable */
@@ -153,5 +190,15 @@ export async function exportProjectData(projectId: number) {
       db.iapCycles.where('projectId').equals(projectId).toArray(),
     ]);
 
-  return { project, documents, categories, codes, annotations, memos, epojeEntries, fieldNotes, iapCycles };
+  // Descifrar antes de exportar
+  const decAnnotations = await Promise.all(annotations.map(async a => ({
+    ...a,
+    text: await decryptText(a.text || '')
+  })));
+  const decMemos = await Promise.all(memos.map(async m => ({
+    ...m,
+    content: await decryptText(m.content || '')
+  })));
+
+  return { project, documents, categories, codes, annotations: decAnnotations, memos: decMemos, epojeEntries, fieldNotes, iapCycles };
 }

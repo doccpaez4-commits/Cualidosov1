@@ -20,25 +20,23 @@ export default function WordCloud({ projectId, stopwords, verbatims }: Props) {
   const [minFreq, setMinFreq] = useState(2);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { computeWords(); }, [verbatims, customStopwords, minFreq]);
+  useEffect(() => {
+    const worker = new Worker('/workers/wordWorker.js');
+    
+    worker.onmessage = (e) => {
+      setWords(e.data);
+      setLoading(false);
+    };
 
-  function computeWords() {
-    setLoading(true);
-    const stops = new Set(customStopwords.toLowerCase().split(',').map(w => w.trim()).filter(Boolean));
-    const freq = new Map<string, number>();
-    verbatims.forEach(v => {
-      v.text.toLowerCase().split(/\W+/).forEach(w => {
-        if (w.length > 2 && !stops.has(w)) freq.set(w, (freq.get(w) ?? 0) + 1);
-      });
-    });
-    const result: WordFrequency[] = [...freq.entries()]
-      .filter(([, c]) => c >= minFreq)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 120)
-      .map(([text, value]) => ({ text, value }));
-    setWords(result);
-    setLoading(false);
-  }
+    const computeWithWorker = () => {
+      setLoading(true);
+      worker.postMessage({ verbatims, customStopwords, minFreq });
+    };
+
+    computeWithWorker();
+
+    return () => worker.terminate();
+  }, [verbatims, customStopwords, minFreq]);
 
   useEffect(() => {
     if (!svgRef.current || words.length === 0) return;

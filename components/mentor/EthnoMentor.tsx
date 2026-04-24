@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Project } from '@/types';
-import { db } from '@/lib/db';
+import { db, addEncryptedMemo } from '@/lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Plus, Camera, MapPin } from 'lucide-react';
 
@@ -40,7 +40,7 @@ export default function EthnoMentor({ project, selectedAnnotationId }: Props) {
 
   async function saveMemo() {
     if (!memoContent.trim()) return;
-    await db.memos.add({
+    await addEncryptedMemo({
       projectId: project.id!, annotationId: selectedAnnotationId,
       content: memoContent.trim(), createdAt: new Date(), updatedAt: new Date(),
     });

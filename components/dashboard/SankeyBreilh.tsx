@@ -62,7 +62,7 @@ export default function SankeyBreilh({ projectId, onSelect, verbatims }: Props) 
 
     const domainLinks: Record<string, number> = {};
     byDoc.forEach(docCodes => {
-      const domains = [...new Set(docCodes.map(c => c.domain!))];
+      const domains = Array.from(new Set(docCodes.map(c => c.domain!)));
       for (let i = 0; i < domains.length; i++) {
         for (let j = i + 1; j < domains.length; j++) {
           const dA = domains[i], dB = domains[j];
