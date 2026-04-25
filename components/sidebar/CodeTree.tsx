@@ -317,7 +317,7 @@ export default function CodeTree() {
                
             {isBreilh && (
               <div className="grid grid-cols-2 gap-1 mt-2">
-                {(['general','particular','individual','none'] as BreilhDomain[]).map(d => (
+                {(['general','particular','singular','none'] as BreilhDomain[]).map(d => (
                   <button key={d} onClick={() => setNewCatDomain(d)}
                     className="text-[10px] py-1 rounded border transition-all"
                     style={{

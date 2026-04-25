@@ -8,7 +8,7 @@ export type LenteType =
   | 'free';          // Práctica Libre (sin metodología definida)
 
 // Dominio de clasificación según la Metacrítica de Breilh
-export type BreilhDomain = 'general' | 'particular' | 'individual' | 'none';
+export type BreilhDomain = 'general' | 'particular' | 'singular' | 'none';
 
 // Fase de codificación en Teoría Fundamentada
 export type GroundedPhase = 'open' | 'axial' | 'selective';

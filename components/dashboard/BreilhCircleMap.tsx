@@ -216,7 +216,7 @@ export default function BreilhCircleMap({ verbatims }: BreilhCircleMapProps) {
         
         if (d.domain === 'general') { minR = RADIUS_PARTICULAR + 20; }
         else if (d.domain === 'particular') { minR = RADIUS_INDIVIDUAL + 20; maxR = RADIUS_PARTICULAR - 20; }
-        else if (d.domain === 'individual') { maxR = RADIUS_INDIVIDUAL - 20; }
+        else if (d.domain === 'singular') { maxR = RADIUS_INDIVIDUAL - 20; }
         
         if (dist > maxR) {
           d.x = CENTER_X + (dx / dist) * maxR;

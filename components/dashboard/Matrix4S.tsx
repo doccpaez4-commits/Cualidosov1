@@ -11,7 +11,7 @@ interface Matrix4SProps {
 const DOMAINS: Array<{ id: BreilhDomain; label: string; bg: string; headerBg: string }> = [
   { id: 'general',    label: 'General — Estructural',      bg: '#fdf4ff', headerBg: '#7e22ce' },
   { id: 'particular', label: 'Particular — Grupal/Familiar', bg: '#eff6ff', headerBg: '#1d4ed8' },
-  { id: 'individual', label: 'Individual — Singular',      bg: '#f0fdf4', headerBg: '#166534' },
+  { id: 'singular', label: 'Individual — Singular',      bg: '#f0fdf4', headerBg: '#166534' },
 ];
 
 const SS_VIDA = [
