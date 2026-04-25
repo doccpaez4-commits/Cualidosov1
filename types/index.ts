@@ -56,6 +56,7 @@ export interface Code {
   name: string;
   color: string;          // hex color
   description?: string;
+  domain?: BreilhDomain;  // Solo para lente Breilh (Dimensión)
   breilhType?: 'protector' | 'malsano' | 'none'; // Proceso protector/malsano
   sDeLaVida?: 'soberania' | 'sustentabilidad' | 'seguridad' | 'solidaridad' | 'none'; // Las 4 S de la vida
   groundedPhase?: GroundedPhase;    // Solo para lente Grounded
