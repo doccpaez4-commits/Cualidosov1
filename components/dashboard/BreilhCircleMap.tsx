@@ -128,7 +128,7 @@ export default function BreilhCircleMap({ verbatims }: BreilhCircleMapProps) {
 
     // Helper para dibujar la forma según S de la vida
     const drawShape = (g: any) => {
-      g.each(function(d: any) {
+      g.each(function(this: any, d: any) {
         if (d.type !== 'code') return;
         const el = d3.select(this);
         const s = d.sDeLaVida;

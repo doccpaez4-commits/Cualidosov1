@@ -121,8 +121,8 @@ export default function SankeyBreilh({ projectId, onSelect, verbatims }: Props) 
         .attr('stroke-width', (d: any) => Math.max(1, d.width))
         .attr('fill', 'none').attr('opacity', 0.35)
         .style('cursor', 'pointer')
-        .on('mouseenter', function() { d3.select(this).attr('opacity', 0.65); })
-        .on('mouseleave', function() { d3.select(this).attr('opacity', 0.35); })
+        .on('mouseenter', function(this: any) { d3.select(this).attr('opacity', 0.65); })
+        .on('mouseleave', function(this: any) { d3.select(this).attr('opacity', 0.35); })
         .on('click', (_, d: any) => {
           const srcName = d.source.name; const tgtName = d.target.name;
           const matching = verbatims.filter(v => v.codeName === srcName || v.codeName === tgtName);

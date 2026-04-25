@@ -135,7 +135,7 @@ export default function ConcurrenceMatrix({ projectId, onSelect, verbatims }: Pr
           .style('transition', 'opacity 0.15s, transform 0.15s');
 
         rect
-          .on('mouseenter', function(event) {
+          .on('mouseenter', function(this: any) {
             d3.select(this)
               .attr('opacity', 1)
               .attr('stroke', '#fff')
@@ -151,7 +151,7 @@ export default function ConcurrenceMatrix({ projectId, onSelect, verbatims }: Pr
               });
             }
           })
-          .on('mouseleave', function() {
+          .on('mouseleave', function(this: any) {
             d3.select(this).attr('opacity', 0.85).attr('stroke', 'none');
             setTooltip(t => ({ ...t, visible: false }));
           })
