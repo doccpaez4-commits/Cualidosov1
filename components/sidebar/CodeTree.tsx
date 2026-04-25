@@ -11,10 +11,10 @@ import {
 import type { Code, Category, BreilhDomain, GroundedPhase } from '@/types';
 
 const DOMAIN_LABELS: Record<BreilhDomain, string> = {
-  general: 'General', particular: 'Particular', individual: 'Individual', none: 'No aplica',
+  general: 'General', particular: 'Particular', singular: 'Singular', none: 'No aplica',
 };
 const DOMAIN_COLORS: Record<BreilhDomain, string> = {
-  general: '#7c6af7', particular: '#14b8a6', individual: '#fb7185', none: '#cbd5e1',
+  general: '#7c6af7', particular: '#14b8a6', singular: '#fb7185', none: '#cbd5e1',
 };
 const PHASE_LABELS: Record<GroundedPhase, string> = {
   open: 'Abierta', axial: 'Axial', selective: 'Selectiva',
@@ -362,7 +362,7 @@ export default function CodeTree() {
                             <option value="none">Dimensión: No aplica</option>
                             <option value="general">General</option>
                             <option value="particular">Particular</option>
-                            <option value="individual">Individual</option>
+                            <option value="singular">Singular</option>
                           </select>
                         )}
                         <div className="flex gap-1">
