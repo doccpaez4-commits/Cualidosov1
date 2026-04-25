@@ -45,10 +45,11 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
   }
 
   // Conteos por dominio
-  const domainCounts = {
+  const domainCounts: Record<BreilhDomain, number> = {
     general:    codes?.filter(c => c.domain === 'general').length ?? 0,
     particular: codes?.filter(c => c.domain === 'particular').length ?? 0,
     singular:   codes?.filter(c => c.domain === 'singular').length ?? 0,
+    none:       codes?.filter(c => !c.domain || c.domain === 'none').length ?? 0,
   };
   const totalCodes = (domainCounts.general + domainCounts.particular + domainCounts.singular) || 1;
 
