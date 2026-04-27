@@ -10,15 +10,16 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const router = useRouter();
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     async function checkAuth() {
       try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
         if (!supabaseUrl || !supabaseKey) {
-          console.error('Supabase configuration missing');
           setIsChecking(false);
           if (pathname !== '/login') router.replace('/login');
           return;
@@ -41,13 +42,15 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           }
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
         setIsChecking(false);
         if (pathname !== '/login') router.replace('/login');
       }
     }
     checkAuth();
   }, [pathname, router]);
+
+  // Prevenir errores de hidratación en Next.js App Router
+  if (!mounted) return null;
 
   if (isChecking) {
     return (
@@ -57,6 +60,5 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     );
   }
 
-  // Si estamos en login o ya tenemos llave, renderizar hijos
   return <>{children}</>;
 }
