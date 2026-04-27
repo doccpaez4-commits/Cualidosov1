@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useProjectContext } from '@/components/ProjectProvider';
@@ -29,16 +29,20 @@ export default function CorpusSidebar() {
     }
   }, [documents.length]);
 
-  // Conteo de hallazgos por documento
-  const annotationCounts = useLiveQuery(async () => {
-    if (!project?.id) return new Map<number, number>();
-    const annots = await db.annotations.where('projectId').equals(project.id).toArray();
+  // Consulta de anotaciones para conteo (vía useMemo para estabilidad)
+  const rawAnnotations = useLiveQuery(
+    () => project?.id ? db.annotations.where('projectId').equals(project.id).toArray() : Promise.resolve([]),
+    [project?.id]
+  );
+
+  const annotationCounts = useMemo(() => {
     const counts = new Map<number, number>();
-    annots.forEach(a => {
+    if (!rawAnnotations) return counts;
+    rawAnnotations.forEach(a => {
       counts.set(a.documentId, (counts.get(a.documentId) || 0) + 1);
     });
     return counts;
-  }, [project?.id], new Map<number, number>());
+  }, [rawAnnotations]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (!project) return;

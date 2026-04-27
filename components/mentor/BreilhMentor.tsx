@@ -108,6 +108,11 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
 
   if (!project?.id) return null;
 
+  // Fallback para proyectos nuevos sin datos
+  const safeCodes = codes || [];
+  const safeCategories = categories || [];
+  const safeAnnotations = annotations || [];
+
   async function saveMemo() {
     if (!memoContent.trim()) return;
     await addEncryptedMemo({
@@ -198,10 +203,10 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
               <div key={dim.id} className="space-y-2">
                 <div className="flex items-center justify-between px-1">
                   <span className="text-[11px] font-bold" style={{ color: dim.color }}>{dim.label}</span>
-                  <span className="text-[10px] font-bold opacity-60">{domainCounts[dim.id]} hallazgos</span>
+                  <span className="text-[10px] font-bold opacity-60">{(domainCounts[dim.id] || 0)} hallazgos</span>
                 </div>
                 <div className="h-1 rounded-full overflow-hidden bg-slate-100">
-                  <div className="h-full transition-all duration-500" style={{ width: `${(domainCounts[dim.id] / totalAnnotations) * 100}%`, background: dim.color }} />
+                  <div className="h-full transition-all duration-500" style={{ width: `${((domainCounts[dim.id] || 0) / totalAnnotations) * 100}%`, background: dim.color }} />
                 </div>
                 <div className="space-y-1.5 pl-2 border-l-2" style={{ borderColor: `${dim.color}40` }}>
                   {dim.questions.map((q, i) => (
@@ -220,10 +225,10 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
               <div key={s.id} className="space-y-2">
                 <div className="flex items-center justify-between px-1">
                   <span className="text-[11px] font-bold" style={{ color: s.color }}>{s.label}</span>
-                  <span className="text-[10px] font-bold opacity-60">{sCounts[s.id as keyof typeof sCounts]} hallazgos</span>
+                  <span className="text-[10px] font-bold opacity-60">{(sCounts[s.id as keyof typeof sCounts] || 0)} hallazgos</span>
                 </div>
                 <div className="h-1 rounded-full overflow-hidden bg-slate-100">
-                  <div className="h-full transition-all duration-500" style={{ width: `${(sCounts[s.id as keyof typeof sCounts] / totalAnnotations) * 100}%`, background: s.color }} />
+                  <div className="h-full transition-all duration-500" style={{ width: `${((sCounts[s.id as keyof typeof sCounts] || 0) / totalAnnotations) * 100}%`, background: s.color }} />
                 </div>
                 <div className="space-y-1.5 pl-2 border-l-2" style={{ borderColor: `${s.color}40` }}>
                   {s.questions.map((q, i) => (
