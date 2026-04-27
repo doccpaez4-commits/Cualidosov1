@@ -26,7 +26,19 @@ const PRESET_COLORS = [
 ];
 
 export default function CodeTree() {
-  const { codes, categories, activeCodeId, setActiveCodeId, refreshCodes, project } = useProjectContext();
+  const { codes, categories, activeCodeId, setActiveCodeId, refreshCodes, project, activeDocumentId } = useProjectContext();
+  
+  // Conteo de hallazgos para el documento activo
+  const activeDocAnnotations = useLiveQuery(async () => {
+    if (!activeDocumentId) return new Map<number, number>();
+    const annots = await db.annotations.where('documentId').equals(activeDocumentId).toArray();
+    const counts = new Map<number, number>();
+    annots.forEach(a => {
+      counts.set(a.codeId, (counts.get(a.codeId) || 0) + 1);
+    });
+    return counts;
+  }, [activeDocumentId], new Map<number, number>());
+
   const [showNewCode, setShowNewCode] = useState(false);
   const [showNewCat, setShowNewCat] = useState(false);
   
@@ -199,7 +211,11 @@ export default function CodeTree() {
               <div className="flex items-center gap-1.5 overflow-hidden">
                 <span className="flex-1 truncate text-xs font-medium"
                   style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                  {code.name}
+                  {code.name} {activeDocAnnotations.get(code.id!) !== undefined && activeDocAnnotations.get(code.id!)! > 0 && (
+                    <span className="font-bold text-accent ml-1" style={{ color: 'var(--accent)' }}>
+                      ({activeDocAnnotations.get(code.id!)})
+                    </span>
+                  )}
                 </span>
                 {isBreilh && code.breilhType && code.breilhType !== 'none' && (
                   <span className={`text-[9px] px-1 rounded-full font-bold uppercase ${code.breilhType === 'protector' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>

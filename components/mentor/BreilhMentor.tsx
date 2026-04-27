@@ -101,9 +101,10 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
   const [activeTab, setActiveTab] = useState<'dimensions' | '4s'>('dimensions');
   const [memoContent, setMemoContent] = useState('');
 
-  // Datos para conteo en tiempo real
+  // Datos para conteo en tiempo real (Anotaciones para contar uso real)
   const codes = useLiveQuery(() => db.codes.where('projectId').equals(project.id!).toArray(), [project.id]);
   const categories = useLiveQuery(() => db.categories.where('projectId').equals(project.id!).toArray(), [project.id]);
+  const annotations = useLiveQuery(() => db.annotations.where('projectId').equals(project.id!).toArray(), [project.id]);
 
   async function saveMemo() {
     if (!memoContent.trim()) return;
@@ -115,25 +116,31 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
     setMemoContent('');
   }
 
-  // Mapear dominios desde categorías a códigos
-  const catDomainMap = new Map(categories?.map(cat => [cat.id, cat.domain]) || []);
+  // Mapear dominios y 4S a cada código
+  const codeMetaMap = new Map(codes?.map(c => [
+    c.id, 
+    { 
+      domain: categories?.find(cat => cat.id === c.categoryId)?.domain || 'none',
+      s: c.sDeLaVida || 'none'
+    }
+  ]) || []);
   
   const domainCounts: Record<BreilhDomain, number> = {
-    general:    codes?.filter(c => catDomainMap.get(c.categoryId) === 'general').length ?? 0,
-    particular: codes?.filter(c => catDomainMap.get(c.categoryId) === 'particular').length ?? 0,
-    singular:   codes?.filter(c => catDomainMap.get(c.categoryId) === 'singular').length ?? 0,
-    none:       codes?.filter(c => !catDomainMap.get(c.categoryId) || catDomainMap.get(c.categoryId) === 'none').length ?? 0,
+    general:    annotations?.filter(a => codeMetaMap.get(a.codeId)?.domain === 'general').length ?? 0,
+    particular: annotations?.filter(a => codeMetaMap.get(a.codeId)?.domain === 'particular').length ?? 0,
+    singular:   annotations?.filter(a => codeMetaMap.get(a.codeId)?.domain === 'singular').length ?? 0,
+    none:       annotations?.filter(a => codeMetaMap.get(a.codeId)?.domain === 'none').length ?? 0,
   };
 
   const sCounts: Record<string, number> = {
-    sustentabilidad: codes?.filter(c => c.sDeLaVida === 'sustentabilidad').length ?? 0,
-    soberania:       codes?.filter(c => c.sDeLaVida === 'soberania').length ?? 0,
-    solidaridad:     codes?.filter(c => c.sDeLaVida === 'solidaridad').length ?? 0,
-    seguridad:       codes?.filter(c => c.sDeLaVida === 'seguridad').length ?? 0,
-    none:            codes?.filter(c => !c.sDeLaVida || c.sDeLaVida === 'none').length ?? 0,
+    sustentabilidad: annotations?.filter(a => codeMetaMap.get(a.codeId)?.s === 'sustentabilidad').length ?? 0,
+    soberania:       annotations?.filter(a => codeMetaMap.get(a.codeId)?.s === 'soberania').length ?? 0,
+    solidaridad:     annotations?.filter(a => codeMetaMap.get(a.codeId)?.s === 'solidaridad').length ?? 0,
+    seguridad:       annotations?.filter(a => codeMetaMap.get(a.codeId)?.s === 'seguridad').length ?? 0,
+    none:            annotations?.filter(a => codeMetaMap.get(a.codeId)?.s === 'none').length ?? 0,
   };
 
-  const totalCodes = codes?.length || 1;
+  const totalAnnotations = annotations?.length || 1;
 
   return (
     <div className="space-y-4">
@@ -174,10 +181,10 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
               <div key={dim.id} className="space-y-2">
                 <div className="flex items-center justify-between px-1">
                   <span className="text-[11px] font-bold" style={{ color: dim.color }}>{dim.label}</span>
-                  <span className="text-[10px] font-bold opacity-60">{domainCounts[dim.id]} códigos</span>
+                  <span className="text-[10px] font-bold opacity-60">{domainCounts[dim.id]} hallazgos</span>
                 </div>
                 <div className="h-1 rounded-full overflow-hidden bg-slate-100">
-                  <div className="h-full transition-all duration-500" style={{ width: `${(domainCounts[dim.id] / totalCodes) * 100}%`, background: dim.color }} />
+                  <div className="h-full transition-all duration-500" style={{ width: `${(domainCounts[dim.id] / totalAnnotations) * 100}%`, background: dim.color }} />
                 </div>
                 <div className="space-y-1.5 pl-2 border-l-2" style={{ borderColor: `${dim.color}40` }}>
                   {dim.questions.map((q, i) => (
@@ -196,10 +203,10 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
               <div key={s.id} className="space-y-2">
                 <div className="flex items-center justify-between px-1">
                   <span className="text-[11px] font-bold" style={{ color: s.color }}>{s.label}</span>
-                  <span className="text-[10px] font-bold opacity-60">{sCounts[s.id as keyof typeof sCounts]} códigos</span>
+                  <span className="text-[10px] font-bold opacity-60">{sCounts[s.id as keyof typeof sCounts]} hallazgos</span>
                 </div>
                 <div className="h-1 rounded-full overflow-hidden bg-slate-100">
-                  <div className="h-full transition-all duration-500" style={{ width: `${(sCounts[s.id as keyof typeof sCounts] / totalCodes) * 100}%`, background: s.color }} />
+                  <div className="h-full transition-all duration-500" style={{ width: `${(sCounts[s.id as keyof typeof sCounts] / totalAnnotations) * 100}%`, background: s.color }} />
                 </div>
                 <div className="space-y-1.5 pl-2 border-l-2" style={{ borderColor: `${s.color}40` }}>
                   {s.questions.map((q, i) => (
