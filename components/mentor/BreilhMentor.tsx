@@ -99,6 +99,7 @@ const S_VIDA: { id: string; label: string; color: string; questions: string[] }[
 
 export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
   const [activeTab, setActiveTab] = useState<'dimensions' | '4s'>('dimensions');
+  const [memoContent, setMemoContent] = useState('');
 
   // Datos para conteo en tiempo real
   const codes = useLiveQuery(() => db.codes.where('projectId').equals(project.id!).toArray(), [project.id]);
