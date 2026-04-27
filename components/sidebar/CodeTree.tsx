@@ -31,13 +31,19 @@ export default function CodeTree() {
   // Conteo de hallazgos para el documento activo
   const activeDocAnnotations = useLiveQuery(async () => {
     if (!activeDocumentId) return new Map<number, number>();
-    const annots = await db.annotations.where('documentId').equals(activeDocumentId).toArray();
-    const counts = new Map<number, number>();
-    annots.forEach(a => {
-      counts.set(a.codeId, (counts.get(a.codeId) || 0) + 1);
-    });
-    return counts;
+    try {
+      const annots = await db.annotations.where('documentId').equals(activeDocumentId).toArray();
+      const counts = new Map<number, number>();
+      annots.forEach(a => {
+        counts.set(a.codeId, (counts.get(a.codeId) || 0) + 1);
+      });
+      return counts;
+    } catch (e) {
+      return new Map<number, number>();
+    }
   }, [activeDocumentId], new Map<number, number>());
+
+  if (!project) return null;
 
   const [showNewCode, setShowNewCode] = useState(false);
   const [showNewCat, setShowNewCat] = useState(false);
