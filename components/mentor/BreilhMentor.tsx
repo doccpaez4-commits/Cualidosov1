@@ -11,47 +11,128 @@ interface Props {
   selectedAnnotationId?: number;
 }
 
-const BREILH_PROMPTS = [
-  '¿Este proceso está determinado por estructuras sociales generales (Estado, economía, clase)?',
-  '¿Cómo se expresa este fenómeno en el modo de vida del grupo (trabajo, consumo, reproducción)?',
-  '¿Cuál es el fenotipo individual observable? ¿Proceso protector o destructivo?',
-  '¿Qué contradicciones entre los dominios observas en este verbatim?',
-  '¿Qué inequidades de clase, género o etnia atraviesan este proceso?',
+const DIMENSIONS: { id: BreilhDomain; label: string; sublabel: string; color: string; questions: string[] }[] = [
+  { 
+    id: 'general', 
+    label: 'Dimensión General (G)', 
+    sublabel: 'Lógica del Sistema y Poder', 
+    color: '#7c6af7',
+    questions: [
+      '¿De qué manera la lógica de acumulación de capital (ej. extractivismo, agroindustria) impone las condiciones de este problema en el territorio?',
+      '¿Qué políticas, normas o regulaciones hegemónicas están determinando las condiciones generales de vida en este contexto?',
+      '¿Cómo se expresa el metabolismo sociedad-naturaleza a gran escala (ej. cambio climático, deforestación) en este fenómeno?',
+      '¿Qué estructuras de poder económico y político nacional o global están "subsumiendo" o condicionando las posibilidades de salud en esta zona?'
+    ]
+  },
+  { 
+    id: 'particular', 
+    label: 'Dimensión Particular (P)', 
+    sublabel: 'Modos de Vivir Colectivos', 
+    color: '#14b8a6',
+    questions: [
+      '¿Cuáles son los patrones de trabajo y consumo típicos que caracterizan al grupo social, clase o género afectado?',
+      '¿Qué formas de organización, soportes colectivos y relaciones de solidaridad existen (o faltan) en este grupo específico?',
+      '¿Cómo influyen las inequidades de clase, género y etnia en la creación de patrones típicos de exposición y vulnerabilidad para este colectivo?',
+      '¿Qué medios culturales, identitarios y formas de espiritualidad compartida definen la respuesta de este grupo ante los procesos malsanos?'
+    ]
+  },
+  { 
+    id: 'singular', 
+    label: 'Dimensión Singular (I)', 
+    sublabel: 'Estilos de Vida y Cuerpo', 
+    color: '#fb7185',
+    questions: [
+      '¿Cómo se manifiesta el problema como una encarnación (embodiment) biológica (genotipo/fenotipo) o psíquica en la persona?',
+      '¿Cuáles son los itinerarios cotidianos y estilos de vida personales/familiares que se ven afectados por las dimensiones superiores?',
+      '¿De qué manera el individuo experimenta y percibe subjetivamente su bienestar, malestar o "espiritualidad en desesperanza"?',
+      '¿Qué condiciones de infraestructura doméstica y metabolismo familiar directo están presentes en la vida diaria del sujeto?'
+    ]
+  },
 ];
 
-const DOMAINS: { id: BreilhDomain; label: string; sublabel: string; color: string }[] = [
-  { id: 'general',    label: 'General',    sublabel: 'Sociedad / Estado / Economía',     color: '#7c6af7' },
-  { id: 'particular', label: 'Particular', sublabel: 'Modos de vida / Grupo / Trabajo',   color: '#14b8a6' },
-  { id: 'singular',   label: 'Singular',   sublabel: 'Individuo / Fenotipo / Genótipo',   color: '#fb7185' },
+const S_VIDA: { id: string; label: string; color: string; questions: string[] }[] = [
+  {
+    id: 'sustentabilidad',
+    label: 'Sustentabilidad (SUS)',
+    color: '#10b981',
+    questions: [
+      '¿Posee este proceso la capacidad de garantizar la vitalidad plena y reproducción de la vida humana y natural en el tiempo?',
+      '¿Se evidencia una degradación o degeneración de los ecosistemas que ponga en riesgo la continuidad de la vida en este territorio?',
+      '¿Es la base material de este modo de vida duradera o se caracteriza por la fugacidad y el agotamiento de recursos?',
+      '¿Existen procesos de resiliencia y energía colectiva que permitan recuperar la vitalidad perdida frente a impactos externos?'
+    ]
+  },
+  {
+    id: 'soberania',
+    label: 'Soberanía (SOB)',
+    color: '#3b82f6',
+    questions: [
+      '¿Tienen los grupos sociales autonomía real para decidir sobre su sistema social, alimentación y formas de cuidado de la salud?',
+      '¿Existe un control soberano sobre los recursos estratégicos indispensables (agua, tierra, semillas, tecnología) por parte del pueblo?',
+      '¿La identidad y el sentido de vida del colectivo son respetados o están sometidos a una lógica colonial o mercantil externa?',
+      '¿Cuentan los sujetos con la libertad y capacidad de planificación sobre sus propios itinerarios de vida y salud?'
+    ]
+  },
+  {
+    id: 'solidaridad',
+    label: 'Solidaridad (SOL)',
+    color: '#f59e0b',
+    questions: [
+      '¿Prevalece en este proceso una lógica de bien común y apoyo mutuo frente a la competencia y el individualismo?',
+      '¿Existen mecanismos de justicia distributiva y empoderamiento democrático para los sectores menos favorecidos?',
+      '¿Se fomenta la interculturalidad crítica y la comunicación democrática y veraz entre los distintos actores del territorio?',
+      '¿Hay una ética de la vida que promueva la fraternidad y la unión en las relaciones sociales, de género y étnicas?'
+    ]
+  },
+  {
+    id: 'seguridad',
+    label: 'Seguridad / Bioseguridad (SEG)',
+    color: '#ef4444',
+    questions: [
+      '¿Viven los sujetos en entornos y paisajes saludables y bioseguros, libres de contaminantes y procesos destructivos?',
+      '¿El metabolismo social actual genera encarnaciones fisiológicas y psicológicas de placer, energía vital y bienestar?',
+      '¿Se aplican mecanismos de precaución y monitoreo participativo ante riesgos o incertidumbres científicas sobre la salud?',
+      '¿Existe un acceso equitativo y oportuno a sistemas institucionales de protección que garanticen la integridad de la vida?'
+    ]
+  }
 ];
 
 export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
-  const [memoContent, setMemoContent] = useState('');
-  const [selectedDomain, setSelectedDomain] = useState<BreilhDomain>('general');
+  const [activeTab, setActiveTab] = useState<'dimensions' | '4s'>('dimensions');
 
-  const codes = useLiveQuery(
-    () => db.codes.where('projectId').equals(project.id!).toArray(),
-    [project.id]
-  );
+  // Datos para conteo en tiempo real
+  const codes = useLiveQuery(() => db.codes.where('projectId').equals(project.id!).toArray(), [project.id]);
+  const categories = useLiveQuery(() => db.categories.where('projectId').equals(project.id!).toArray(), [project.id]);
 
   async function saveMemo() {
     if (!memoContent.trim()) return;
     await addEncryptedMemo({
       projectId: project.id!, annotationId: selectedAnnotationId,
-      content: `[${selectedDomain.toUpperCase()}] ${memoContent.trim()}`,
+      content: `[METACRÍTICA] ${memoContent.trim()}`,
       createdAt: new Date(), updatedAt: new Date(),
     });
     setMemoContent('');
   }
 
-  // Conteos por dominio
+  // Mapear dominios desde categorías a códigos
+  const catDomainMap = new Map(categories?.map(cat => [cat.id, cat.domain]) || []);
+  
   const domainCounts: Record<BreilhDomain, number> = {
-    general:    codes?.filter(c => c.domain === 'general').length ?? 0,
-    particular: codes?.filter(c => c.domain === 'particular').length ?? 0,
-    singular:   codes?.filter(c => c.domain === 'singular').length ?? 0,
-    none:       codes?.filter(c => !c.domain || c.domain === 'none').length ?? 0,
+    general:    codes?.filter(c => catDomainMap.get(c.categoryId) === 'general').length ?? 0,
+    particular: codes?.filter(c => catDomainMap.get(c.categoryId) === 'particular').length ?? 0,
+    singular:   codes?.filter(c => catDomainMap.get(c.categoryId) === 'singular').length ?? 0,
+    none:       codes?.filter(c => !catDomainMap.get(c.categoryId) || catDomainMap.get(c.categoryId) === 'none').length ?? 0,
   };
-  const totalCodes = (domainCounts.general + domainCounts.particular + domainCounts.singular) || 1;
+
+  const sCounts: Record<string, number> = {
+    sustentabilidad: codes?.filter(c => c.sDeLaVida === 'sustentabilidad').length ?? 0,
+    soberania:       codes?.filter(c => c.sDeLaVida === 'soberania').length ?? 0,
+    solidaridad:     codes?.filter(c => c.sDeLaVida === 'solidaridad').length ?? 0,
+    seguridad:       codes?.filter(c => c.sDeLaVida === 'seguridad').length ?? 0,
+    none:            codes?.filter(c => !c.sDeLaVida || c.sDeLaVida === 'none').length ?? 0,
+  };
+
+  const totalCodes = codes?.length || 1;
 
   return (
     <div className="space-y-4">
@@ -66,79 +147,80 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
         <span className="text-blue-600">Para el dominio <strong>General</strong>, recurra a fuentes de datos estructurados, históricos o bibliográficos. Recuerde confrontar estos hallazgos con datos cuantitativos (perfil epidemiológico) para lograr una correcta meta-inferencia cuali-cuanti.</span>
       </div>
 
-      {/* Matriz de Triple Determinación */}
-      <div>
-        <div className="mentor-tool-title flex items-center gap-1">
-          <Box size={11}/> Matriz de Triple Determinación
-        </div>
-        <div className="space-y-2">
-          {DOMAINS.map(domain => {
-            const count = domainCounts[domain.id];
-            const pct = Math.round((count / totalCodes) * 100);
-            return (
-              <button
-                key={domain.id}
-                onClick={() => setSelectedDomain(domain.id)}
-                className="w-full text-left rounded-lg p-3 transition-all"
-                style={{
-                  background: selectedDomain === domain.id ? `${domain.color}15` : 'var(--bg-primary)',
-                  border: `1px solid ${selectedDomain === domain.id ? domain.color : 'var(--border)'}`,
-                }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold" style={{ color: domain.color }}>{domain.label}</span>
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{count} códigos</span>
-                </div>
-                <span className="text-xs block mb-2" style={{ color: 'var(--text-muted)' }}>{domain.sublabel}</span>
-                {/* Barra de proporción */}
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-secondary)' }}>
-                  <div className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${pct}%`, background: domain.color }} />
-                </div>
-              </button>
-            );
-          })}
-        </div>
+      {/* Tabs de herramientas */}
+      <div className="flex border-b" style={{ borderColor: 'var(--border)' }}>
+        <button 
+          onClick={() => setActiveTab('dimensions')}
+          className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'dimensions' ? 'border-b-2 border-accent text-accent' : 'text-slate-400'}`}
+          style={{ borderColor: activeTab === 'dimensions' ? 'var(--accent)' : 'transparent', color: activeTab === 'dimensions' ? 'var(--accent)' : '' }}
+        >
+          Dimensiones G-P-I
+        </button>
+        <button 
+          onClick={() => setActiveTab('4s')}
+          className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === '4s' ? 'border-b-2 border-accent text-accent' : 'text-slate-400'}`}
+          style={{ borderColor: activeTab === '4s' ? 'var(--accent)' : 'transparent', color: activeTab === '4s' ? 'var(--accent)' : '' }}
+        >
+          Las 4 "S"
+        </button>
       </div>
 
-      {/* Preguntas de Breilh */}
-      <div>
-        <div className="mentor-tool-title">Preguntas orientadoras</div>
-        <div className="space-y-2">
-          {BREILH_PROMPTS.map((p, i) => (
-            <div key={i} className="text-xs p-2.5 rounded-lg leading-relaxed"
-              style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--text-secondary)' }}>
-              {p}
-            </div>
-          ))}
-        </div>
+      <div className="space-y-4 pt-2">
+        {activeTab === 'dimensions' ? (
+          <>
+            <p className="text-[10px] text-slate-400 italic">Estas preguntas ayudan a ubicar si el fenómeno pertenece a la lógica del sistema, a los modos de vivir de los grupos o a la vida singular de los sujetos.</p>
+            {DIMENSIONS.map(dim => (
+              <div key={dim.id} className="space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[11px] font-bold" style={{ color: dim.color }}>{dim.label}</span>
+                  <span className="text-[10px] font-bold opacity-60">{domainCounts[dim.id]} códigos</span>
+                </div>
+                <div className="h-1 rounded-full overflow-hidden bg-slate-100">
+                  <div className="h-full transition-all duration-500" style={{ width: `${(domainCounts[dim.id] / totalCodes) * 100}%`, background: dim.color }} />
+                </div>
+                <div className="space-y-1.5 pl-2 border-l-2" style={{ borderColor: `${dim.color}40` }}>
+                  {dim.questions.map((q, i) => (
+                    <div key={i} className="text-[10px] leading-relaxed text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                      {q}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
+            <p className="text-[10px] text-slate-400 italic">Estas preguntas permiten evaluar si los procesos son saludables/protectores o malsanos/destructivos según los pilares del Sumak Kawsay o Bien Vivir.</p>
+            {S_VIDA.map(s => (
+              <div key={s.id} className="space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[11px] font-bold" style={{ color: s.color }}>{s.label}</span>
+                  <span className="text-[10px] font-bold opacity-60">{sCounts[s.id as keyof typeof sCounts]} códigos</span>
+                </div>
+                <div className="h-1 rounded-full overflow-hidden bg-slate-100">
+                  <div className="h-full transition-all duration-500" style={{ width: `${(sCounts[s.id as keyof typeof sCounts] / totalCodes) * 100}%`, background: s.color }} />
+                </div>
+                <div className="space-y-1.5 pl-2 border-l-2" style={{ borderColor: `${s.color}40` }}>
+                  {s.questions.map((q, i) => (
+                    <div key={i} className="text-[10px] leading-relaxed text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                      {q}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
 
-      {/* Procesos protectores/destructivos */}
-      <div className="mentor-tool">
-        <div className="mentor-tool-title">Clasificar proceso</div>
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          {['Protector', 'Destructivo'].map(tipo => (
-            <div key={tipo} className="text-center text-xs p-2 rounded-lg"
-              style={{
-                background: tipo === 'Protector' ? 'rgba(20,184,166,0.1)' : 'rgba(251,113,133,0.1)',
-                border: `1px solid ${tipo === 'Protector' ? 'rgba(20,184,166,0.3)' : 'rgba(251,113,133,0.3)'}`,
-                color: tipo === 'Protector' ? '#14b8a6' : '#fb7185',
-              }}>
-              {tipo === 'Protector' ? '🟢' : '🔴'} {tipo}
-            </div>
-          ))}
-        </div>
-        <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
-          Dominio activo: <span style={{ color: DOMAINS.find(d => d.id === selectedDomain)?.color }}>
-            {DOMAINS.find(d => d.id === selectedDomain)?.label}
-          </span>
-        </p>
-        <textarea className="input text-xs" rows={3}
-          placeholder="Describe el proceso determinante en este dominio..."
+      {/* Editor de Meta-Inferencia */}
+      <div className="mentor-tool mt-4">
+        <div className="mentor-tool-title">Meta-Inferencia / Análisis</div>
+        <textarea className="input text-xs" rows={4}
+          placeholder="Describe la relación entre dominios o procesos críticos aquí..."
           value={memoContent} onChange={e => setMemoContent(e.target.value)} />
         <button className="btn btn-primary w-full mt-2 text-xs" onClick={saveMemo}>
-          <Plus size={13}/> Guardar Análisis
+          <Plus size={13}/> Guardar Hallazgo
         </button>
       </div>
     </div>
