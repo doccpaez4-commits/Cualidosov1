@@ -214,7 +214,7 @@ export default function TextViewer() {
       <div
         ref={containerRef}
         className="flex-1 overflow-y-auto px-8 py-6 leading-8 text-base outline-none"
-        style={{ color: 'var(--text-primary)', userSelect: 'text', fontFamily: 'Georgia, serif', fontSize: '15px' }}
+        style={{ color: 'var(--text-primary)', userSelect: 'text', fontFamily: 'Georgia, serif', fontSize: '15px', whiteSpace: 'pre-wrap' }}
         onMouseUp={handleMouseUp}
       >
         {rendered}

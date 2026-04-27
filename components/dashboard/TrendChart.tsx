@@ -81,12 +81,12 @@ export default function TrendChart({ verbatims }: TrendChartProps) {
     <div className="w-full h-full bg-white rounded-xl shadow-md border p-6 flex flex-col" style={{ borderColor: 'var(--border)' }}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-bold text-[#8f203d] flex items-center gap-2">
-            Dinámica de Saturación por Documento
+          <h3 className="text-lg font-bold text-accent flex items-center gap-2" style={{ color: 'var(--accent)' }}>
+            <BarChart2 size={20} /> Acumulación de Hallazgos
           </h3>
           <p className="text-xs text-gray-500 mt-1">Acumulación progresiva de códigos a través del corpus de investigación.</p>
         </div>
-        <button onClick={downloadSVG} className="btn btn-ghost btn-sm gap-2 text-[#8f203d]">
+        <button onClick={downloadSVG} className="btn btn-ghost btn-sm gap-2 text-accent" style={{ color: 'var(--accent)' }}>
           <Download size={14}/> Exportar PNG
         </button>
       </div>
@@ -135,7 +135,7 @@ export default function TrendChart({ verbatims }: TrendChartProps) {
       </div>
 
       <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-dashed flex gap-3 items-start">
-        <Info size={16} className="text-[#8f203d] mt-0.5 flex-shrink-0" />
+        <Info size={16} className="text-accent mt-0.5 flex-shrink-0" style={{ color: 'var(--accent)' }} />
         <div className="text-[11px] text-gray-600 leading-relaxed">
           <strong>Interpretación Científica:</strong> Este gráfico permite observar si existe una "meseta" en la aparición de códigos, lo cual es indicador de **Saturación Teórica**. Si el área de un código crece exponencialmente en los últimos documentos, indica que el fenómeno sigue presentándose con fuerza y requiere más análisis.
         </div>

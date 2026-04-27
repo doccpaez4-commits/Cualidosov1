@@ -43,8 +43,8 @@ export default function ConceptMap({ verbatims, projectId }: ConceptMapProps) {
             dbId: dbCat?.id,
             group: 'category', 
             radius: 35, 
-            color: '#8f203d20', 
-            stroke: '#8f203d',
+            color: 'rgba(3, 88, 161, 0.08)', 
+            stroke: '#0358a1',
             count: 0,
             fx: dbCat?.position?.x,
             fy: dbCat?.position?.y
@@ -97,17 +97,17 @@ export default function ConceptMap({ verbatims, projectId }: ConceptMapProps) {
         .velocityDecay(0.4) // Fricción alta para evitar que floten erráticamente
         .alphaDecay(0.05);
 
-      // Flechas
+      // Flechas profesionales
       svg.append('defs').append('marker')
         .attr('id', 'arrow')
         .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 30)
+        .attr('refX', 9.5) // Punta de la flecha
         .attr('refY', 0)
-        .attr('markerWidth', 5)
-        .attr('markerHeight', 5)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
         .attr('orient', 'auto')
         .append('path')
-        .attr('fill', '#cbd5e1')
+        .attr('fill', '#94a3b8')
         .attr('d', 'M0,-5L10,0L0,5');
 
       const link = svg.append('g')
@@ -156,8 +156,7 @@ export default function ConceptMap({ verbatims, projectId }: ConceptMapProps) {
              const dy = d.target.y - d.source.y;
              const dist = Math.sqrt(dx*dx + dy*dy);
              if (dist === 0) return d.source.x;
-             const sourceR = d.source.radius + Math.sqrt(d.source.count) * 2;
-             if (dist < sourceR) return d.target.x; // prevenir inversión
+             const sourceR = (d.source.radius || 25) + Math.sqrt(d.source.count || 0) * 2;
              return d.source.x + (dx * sourceR / dist);
           })
           .attr('y1', (d: any) => {
@@ -165,8 +164,7 @@ export default function ConceptMap({ verbatims, projectId }: ConceptMapProps) {
              const dy = d.target.y - d.source.y;
              const dist = Math.sqrt(dx*dx + dy*dy);
              if (dist === 0) return d.source.y;
-             const sourceR = d.source.radius + Math.sqrt(d.source.count) * 2;
-             if (dist < sourceR) return d.target.y; // prevenir inversión
+             const sourceR = (d.source.radius || 25) + Math.sqrt(d.source.count || 0) * 2;
              return d.source.y + (dy * sourceR / dist);
           })
           .attr('x2', (d: any) => {
@@ -174,8 +172,8 @@ export default function ConceptMap({ verbatims, projectId }: ConceptMapProps) {
              const dy = d.target.y - d.source.y;
              const dist = Math.sqrt(dx*dx + dy*dy);
              if (dist === 0) return d.target.x;
-             const targetR = d.target.radius + Math.sqrt(d.target.count) * 2 + 8;
-             if (dist < targetR) return d.source.x; // prevenir inversión de flecha
+             // Ajuste fino para que la punta de la flecha toque el borde del nodo
+             const targetR = (d.target.radius || 25) + Math.sqrt(d.target.count || 0) * 2 + 2;
              return d.target.x - (dx * targetR / dist);
           })
           .attr('y2', (d: any) => {
@@ -183,8 +181,7 @@ export default function ConceptMap({ verbatims, projectId }: ConceptMapProps) {
              const dy = d.target.y - d.source.y;
              const dist = Math.sqrt(dx*dx + dy*dy);
              if (dist === 0) return d.target.y;
-             const targetR = d.target.radius + Math.sqrt(d.target.count) * 2 + 8;
-             if (dist < targetR) return d.source.y; // prevenir inversión de flecha
+             const targetR = (d.target.radius || 25) + Math.sqrt(d.target.count || 0) * 2 + 2;
              return d.target.y - (dy * targetR / dist);
           });
 
@@ -268,7 +265,7 @@ export default function ConceptMap({ verbatims, projectId }: ConceptMapProps) {
     <div className="w-full h-full bg-white rounded-xl shadow-lg border p-6 relative flex flex-col" style={{ borderColor: 'var(--border)' }}>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-bold text-[#8f203d]">Mapa Conceptual Dinámico</h3>
+          <h3 className="text-lg font-bold text-accent" style={{ color: 'var(--accent)' }}>Mapa Conceptual Dinámico</h3>
           <p className="text-[10px] text-gray-500">Arrastra los nodos para organizar tu teoría. Las posiciones se guardan automáticamente.</p>
         </div>
         <div className="flex gap-2">
@@ -280,7 +277,7 @@ export default function ConceptMap({ verbatims, projectId }: ConceptMapProps) {
           <button onClick={resetLayout} className="btn btn-ghost btn-sm text-gray-400" title="Restablecer diseño">
             <RefreshCw size={14}/>
           </button>
-          <button onClick={downloadSVG} className="btn btn-ghost btn-sm gap-2 text-[#8f203d] border border-[#8f203d20]">
+          <button onClick={downloadSVG} className="btn btn-ghost btn-sm gap-2 text-accent border border-accent/20">
             <Download size={14}/> PNG
           </button>
         </div>

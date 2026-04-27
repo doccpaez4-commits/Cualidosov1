@@ -25,7 +25,7 @@ export default function VerbatimList({ verbatims, onClose }: Props) {
               <span className="truncate">{v.documentName}</span>
             </div>
             {/* Texto */}
-            <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            <p className="leading-relaxed" style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
               "{v.text}"
             </p>
             {/* Código + categoría */}
@@ -45,11 +45,11 @@ export default function VerbatimList({ verbatims, onClose }: Props) {
             {/* Memos del Mentor */}
             {v.memos && v.memos.length > 0 && (
               <div className="mt-2 pt-2 border-t space-y-1.5" style={{ borderColor: 'var(--border)' }}>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-500 flex items-center gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-accent flex items-center gap-1" style={{ color: 'var(--accent)' }}>
                   ✎ Memos del Mentor
                 </span>
                 {v.memos.map(memo => (
-                  <div key={memo.id} className="text-[11px] p-2 rounded leading-relaxed bg-indigo-50 text-indigo-900 border border-indigo-100">
+                  <div key={memo.id} className="text-[11px] p-2 rounded leading-relaxed bg-accent/5 text-accent border border-accent/10" style={{ color: 'var(--accent)', backgroundColor: 'rgba(3,88,161,0.05)', borderColor: 'rgba(3,88,161,0.1)' }}>
                     {memo.content}
                   </div>
                 ))}

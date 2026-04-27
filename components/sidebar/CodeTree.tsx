@@ -241,7 +241,7 @@ export default function CodeTree() {
     <div className="flex flex-col h-full bg-white">
       {/* Header */}
       <div className="section-header flex-shrink-0 bg-gray-50 border-b">
-        <div className="flex items-center gap-1 text-[#8f203d]">
+        <div className="flex items-center gap-1 text-accent" style={{ color: 'var(--accent)' }}>
           <Tag size={13}/> <span className="font-bold">CÓDIGOS</span>
         </div>
         <div className="flex items-center gap-1">
@@ -372,7 +372,7 @@ export default function CodeTree() {
                       </div>
                     ) : (
                       <div className="cursor-pointer" onClick={() => toggleCat(cat.id!)}>
-                        <h4 className="text-xs font-bold uppercase tracking-tight flex items-center justify-between" style={{ color: '#8f203d' }}>
+                        <h4 className="text-xs font-bold uppercase tracking-tight flex items-center justify-between" style={{ color: 'var(--accent)' }}>
                           <span className="truncate">{cat.name}</span>
                           <span className="text-[10px] font-normal opacity-50 ml-1">({catCodes.length})</span>
                         </h4>

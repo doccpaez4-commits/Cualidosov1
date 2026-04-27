@@ -137,9 +137,9 @@ export default function Matrix4S({ verbatims }: Matrix4SProps) {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-2 h-10 rounded-full bg-[#8f203d]" />
+            <div className="w-2 h-10 rounded-full bg-accent" style={{ backgroundColor: 'var(--accent)' }} />
             <div>
-              <h3 className="text-2xl font-black text-[#8f203d] uppercase tracking-tight">
+              <h3 className="text-2xl font-black text-accent uppercase tracking-tight" style={{ color: 'var(--accent)' }}>
                 Matriz de las 4 S de la Vida
               </h3>
               <p className="text-xs text-gray-400 font-medium mt-0.5">
@@ -171,13 +171,14 @@ export default function Matrix4S({ verbatims }: Matrix4SProps) {
         <table className="w-full text-left border-separate border-spacing-1 table-fixed">
           <thead>
             <tr>
-              <th className="p-4 bg-[#8f203d]/10 rounded-tl-xl border border-[#8f203d]/20 w-48">
-                <div className="text-[10px] font-black text-[#8f203d] uppercase tracking-widest">Dimensión</div>
+              <th className="p-4 bg-accent/10 rounded-tl-xl border border-accent/20 w-48" style={{ backgroundColor: 'var(--accent-light)', borderColor: 'rgba(3,88,161,0.2)' }}>
+                <div className="text-[10px] font-black text-accent uppercase tracking-widest" style={{ color: 'var(--accent)' }}>Dimensión</div>
                 <div className="text-[9px] text-gray-400 mt-0.5">↓ Nivel · S de la Vida →</div>
               </th>
               {SS_VIDA.map((s, idx) => (
                 <th key={s.id}
-                  className={`p-3 bg-[#8f203d] text-white font-bold text-sm text-center border border-[#8f203d] ${idx === SS_VIDA.length - 1 ? 'rounded-tr-xl' : ''}`}
+                  className={`p-3 bg-accent text-white font-bold text-sm text-center border border-accent ${idx === SS_VIDA.length - 1 ? 'rounded-tr-xl' : ''}`}
+                  style={{ backgroundColor: 'var(--accent)', borderColor: 'var(--accent)' }}
                 >
                   <div className="uppercase text-[12px] tracking-wider">{s.label}</div>
                 </th>

@@ -272,11 +272,11 @@ export default function HomePage() {
             <Shield size={24} />
           </div>
           <div className="flex-1 text-center md:text-left">
-            <h3 className="font-bold text-sm mb-1" style={{ color: 'var(--accent)' }}>Tu trabajo es privado y local</h3>
+            <h3 className="font-bold text-sm mb-1" style={{ color: 'var(--accent)' }}>Tu trabajo es privado, cifrado y 100% local</h3>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              Para garantizar tu privacidad, Cualidoso <strong>no guarda datos en la nube</strong>. Todo se almacena en la memoria de este navegador. 
+              Para garantizar tu seguridad y tranquilidad, Cualidoso <strong>no guarda datos en la nube</strong>. Todo se almacena exclusivamente en tu navegador mediante <strong>cifrado AES-256</strong>, utilizando tu contraseña como llave maestra. 
               Si borras el historial o cambias de equipo, tus proyectos no estarán disponibles. 
-              Es <strong style={{ color: 'var(--accent)' }}>vital descargar el archivo .research</strong> periódicamente como respaldo maestro.
+              Es <strong style={{ color: 'var(--accent)' }}>vital descargar el archivo .research</strong> periódicamente como respaldo maestro cifrado.
             </p>
           </div>
           <div className="flex gap-2">

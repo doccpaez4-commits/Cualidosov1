@@ -54,7 +54,7 @@ export default function SummarySheet({ verbatims }: SummarySheetProps) {
       <div className="space-y-8">
         {Object.entries(summary).map(([cat, codes]) => (
           <div key={cat} className="category-block">
-            <h3 className="text-lg font-bold text-teal-700 bg-teal-50 px-4 py-2 rounded-t-lg border border-teal-100">
+            <h3 className="text-lg font-bold text-accent bg-accent/5 px-4 py-2 rounded-t-lg border border-accent/10" style={{ color: 'var(--accent)', backgroundColor: 'rgba(3,88,161,0.05)', borderColor: 'rgba(3,88,161,0.1)' }}>
               Categoría: <span className="text-gray-900">{cat}</span>
             </h3>
             
@@ -81,9 +81,9 @@ export default function SummarySheet({ verbatims }: SummarySheetProps) {
                         </span>
                         {/* Memos del Mentor vinculados */}
                         {v.memos && v.memos.length > 0 && (
-                          <div className="mt-2 space-y-1 pl-3 border-l-2 border-indigo-200">
+                          <div className="mt-2 space-y-1 pl-3 border-l-2 border-accent/20">
                             {v.memos.map(memo => (
-                              <div key={memo.id} className="text-[11px] text-indigo-700 bg-indigo-50 p-2 rounded">
+                              <div key={memo.id} className="text-[11px] text-accent bg-accent/5 p-2 rounded" style={{ color: 'var(--accent)', backgroundColor: 'rgba(3,88,161,0.05)' }}>
                                 <strong className="block mb-0.5 opacity-80">Mentor/Análisis:</strong>
                                 {memo.content}
                               </div>

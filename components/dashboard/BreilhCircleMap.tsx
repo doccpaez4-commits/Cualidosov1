@@ -278,7 +278,7 @@ export default function BreilhCircleMap({ verbatims }: BreilhCircleMapProps) {
     <div className="w-full h-full bg-white rounded-xl shadow-lg border p-6 flex flex-col relative" style={{ borderColor: 'var(--border)' }}>
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div>
-          <h3 className="text-lg font-bold text-[#8f203d]">Mapa Concéntrico de Determinación</h3>
+          <h3 className="text-lg font-bold text-accent" style={{ color: 'var(--accent)' }}>Mapa Concéntrico de Determinación</h3>
           <p className="text-[11px] text-gray-500 mt-0.5 max-w-xl">
             Representación jerárquica de la determinación social. El dominio General subsume al Particular, que a su vez subsume al Individual.
           </p>
@@ -339,7 +339,7 @@ export default function BreilhCircleMap({ verbatims }: BreilhCircleMapProps) {
         
         {/* Panel derecho de evidencias */}
         <div className="w-72 border-l border-dashed bg-white/95 p-4 overflow-y-auto z-10 shadow-sm flex flex-col">
-          <h4 className="font-bold uppercase text-[#8f203d] border-b pb-2 mb-4 text-xs">📝 Evidencias (Max 3)</h4>
+          <h4 className="font-bold uppercase text-accent border-b pb-2 mb-4 text-xs" style={{ color: 'var(--accent)', borderColor: 'rgba(3,88,161,0.2)' }}>📝 Evidencias (Max 3)</h4>
           <div className="flex-1 space-y-4">
             {Array.from(new Set(verbatims.map(v => v.codeName))).map(codeName => {
               if (!codeName) return null;

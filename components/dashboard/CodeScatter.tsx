@@ -75,8 +75,8 @@ export default function CodeScatter({ verbatims }: CodeScatterProps) {
   return (
     <div className="w-full h-full bg-white rounded-xl shadow-md border p-6 flex flex-col" style={{ borderColor: 'var(--border)' }}>
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg font-bold text-[#8f203d]">Plano Cartesiano de Saturación</h3>
-        <button onClick={downloadSVG} className="btn btn-ghost btn-sm gap-2 text-[#8f203d]">
+        <h3 className="text-lg font-bold text-accent" style={{ color: 'var(--accent)' }}>Plano Cartesiano de Saturación</h3>
+        <button onClick={downloadSVG} className="btn btn-ghost btn-sm gap-2 text-accent">
           <Download size={14}/> Exportar PNG
         </button>
       </div>

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useProjectContext } from '@/components/ProjectProvider';
 import { db } from '@/lib/db';
 import { processFile, ACCEPTED_FILE_TYPES } from '@/lib/fileProcessor';
@@ -27,6 +28,17 @@ export default function CorpusSidebar() {
       });
     }
   }, [documents.length]);
+
+  // Conteo de hallazgos por documento
+  const annotationCounts = useLiveQuery(async () => {
+    if (!project?.id) return new Map<number, number>();
+    const annots = await db.annotations.where('projectId').equals(project.id).toArray();
+    const counts = new Map<number, number>();
+    annots.forEach(a => {
+      counts.set(a.documentId, (counts.get(a.documentId) || 0) + 1);
+    });
+    return counts;
+  }, [project?.id], new Map<number, number>());
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (!project) return;
@@ -123,6 +135,7 @@ export default function CorpusSidebar() {
             {expanded && txtDocs.map(doc => (
               <DocItem key={doc.id} doc={doc}
                 active={activeDocumentId === doc.id}
+                count={annotationCounts.get(doc.id!) || 0}
                 onClick={() => setActiveDocumentId(doc.id!)}
                 onDelete={e => deleteDocument(e, doc.id!)} />
             ))}
@@ -138,6 +151,7 @@ export default function CorpusSidebar() {
             {imgDocs.map(doc => (
               <DocItem key={doc.id} doc={doc}
                 active={activeDocumentId === doc.id}
+                count={annotationCounts.get(doc.id!) || 0}
                 onClick={() => setActiveDocumentId(doc.id!)}
                 onDelete={e => deleteDocument(e, doc.id!)} />
             ))}
@@ -177,8 +191,8 @@ export default function CorpusSidebar() {
   );
 }
 
-function DocItem({ doc, active, onClick, onDelete }: {
-  doc: Document; active: boolean;
+function DocItem({ doc, active, count, onClick, onDelete }: {
+  doc: Document; active: boolean; count: number;
   onClick: () => void; onDelete: (e: React.MouseEvent) => void;
 }) {
   const isImage = doc.type === 'image';
@@ -192,7 +206,7 @@ function DocItem({ doc, active, onClick, onDelete }: {
         : <FileText size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
       }
       <span className="flex-1 truncate text-xs" style={{ color: active ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-        {doc.name}
+        {doc.name} {count > 0 && <span className="font-bold text-accent" style={{ color: 'var(--accent)' }}>({count})</span>}
       </span>
       {doc.size && (
         <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>

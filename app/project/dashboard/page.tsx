@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useProjectContext } from '@/components/ProjectProvider';
 import Link from 'next/link';
-import { ArrowLeft, Grid, BarChart2, Cloud, GitBranch, ScatterChart as ScatterIcon, FileText, Table, Layers, FlaskConical, Users, BookOpen, Microscope } from 'lucide-react';
+import { ArrowLeft, Grid, BarChart2, Cloud, GitBranch, ScatterChart as ScatterIcon, FileText, Table, Layers, FlaskConical, Users, BookOpen, Microscope, ChevronLeft, ChevronRight } from 'lucide-react';
 import ConcurrenceMatrix from '@/components/dashboard/ConcurrenceMatrix';
 import ConceptMap from '@/components/dashboard/ConceptMap';
 import WordCloud from '@/components/dashboard/WordCloud';
@@ -76,6 +76,16 @@ export default function DashboardPage() {
   const visibleLenteViews = lenteViews.filter(v => v.lentes.includes(project.lente));
   const allViews = [...commonViews, ...visibleLenteViews];
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const { scrollLeft } = scrollRef.current;
+      const scrollTo = direction === 'left' ? scrollLeft - 200 : scrollLeft + 200;
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col" style={{ background: 'var(--bg-primary)' }}>
       {/* Header */}
@@ -89,9 +99,20 @@ export default function DashboardPage() {
         </span>
         <div className="flex-1"/>
 
-        {/* Tabs de vistas */}
-        <div className="relative max-w-[60vw] flex items-center">
-          <nav className="flex gap-0.5 overflow-x-auto no-scrollbar scroll-smooth w-full mask-gradient-right pb-1">
+        {/* Tabs de vistas con scroll controlado */}
+        <div className="relative flex items-center group ml-4" style={{ maxWidth: '65vw' }}>
+          <button 
+            className="absolute -left-8 p-1.5 rounded-full bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-accent transition-all opacity-0 group-hover:opacity-100 z-10"
+            onClick={() => scroll('left')}
+            title="Anterior"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          
+          <nav 
+            ref={scrollRef}
+            className="flex gap-0.5 overflow-x-auto no-scrollbar scroll-smooth w-full pb-1 px-2"
+          >
             {allViews.map(v => (
               <button key={v.id}
                 className={`tab ${activeView === v.id ? 'active' : ''} flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-xs`}
@@ -103,9 +124,14 @@ export default function DashboardPage() {
               </button>
             ))}
           </nav>
-          <div className="absolute right-0 top-0 bottom-0 flex items-center bg-gradient-to-l from-white via-white/80 to-transparent px-2 pointer-events-none">
-            <span className="text-gray-400 animate-pulse text-xs pr-1">▶</span>
-          </div>
+
+          <button 
+            className="absolute -right-8 p-1.5 rounded-full bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-accent transition-all opacity-0 group-hover:opacity-100 z-10"
+            onClick={() => scroll('right')}
+            title="Siguiente"
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
       </header>
 

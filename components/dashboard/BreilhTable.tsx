@@ -96,7 +96,7 @@ export default function BreilhTable({ verbatims }: Props) {
       <div className="flex-1 min-h-0 bg-white rounded-xl shadow-md border p-8 overflow-y-auto" style={{ borderColor: 'var(--border)' }}>
         <div ref={printRef} className="bg-white min-w-[900px]">
           <div className="mb-6">
-            <h3 className="text-2xl font-black text-[#8f203d] uppercase tracking-tight">
+            <h3 className="text-2xl font-black text-accent uppercase tracking-tight" style={{ color: 'var(--accent)' }}>
               Cuadro Analítico — Metacrítica
             </h3>
             <p className="text-sm text-gray-500 mt-1">
@@ -106,13 +106,13 @@ export default function BreilhTable({ verbatims }: Props) {
 
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="bg-[#8f203d] text-white">
-                <th className="p-3 border border-[#8f203d] font-bold uppercase text-xs w-[12%]">Dimensión</th>
-                <th className="p-3 border border-[#8f203d] font-bold uppercase text-xs w-[18%]">Categoría</th>
-                <th className="p-3 border border-[#8f203d] font-bold uppercase text-xs w-[15%]">Código</th>
-                <th className="p-3 border border-[#8f203d] font-bold uppercase text-xs w-[12%]">S de la Vida</th>
-                <th className="p-3 border border-[#8f203d] font-bold uppercase text-xs w-[12%]">Proceso</th>
-                <th className="p-3 border border-[#8f203d] font-bold uppercase text-xs w-[31%]">Verbatim</th>
+              <tr className="bg-accent text-white" style={{ backgroundColor: 'var(--accent)' }}>
+                <th className="p-3 border border-accent font-bold uppercase text-xs w-[12%]" style={{ borderColor: 'var(--accent)' }}>Dimensión</th>
+                <th className="p-3 border border-accent font-bold uppercase text-xs w-[18%]" style={{ borderColor: 'var(--accent)' }}>Categoría</th>
+                <th className="p-3 border border-accent font-bold uppercase text-xs w-[15%]" style={{ borderColor: 'var(--accent)' }}>Código</th>
+                <th className="p-3 border border-accent font-bold uppercase text-xs w-[12%]" style={{ borderColor: 'var(--accent)' }}>S de la Vida</th>
+                <th className="p-3 border border-accent font-bold uppercase text-xs w-[12%]" style={{ borderColor: 'var(--accent)' }}>Proceso</th>
+                <th className="p-3 border border-accent font-bold uppercase text-xs w-[31%]" style={{ borderColor: 'var(--accent)' }}>Verbatim</th>
               </tr>
             </thead>
             <tbody>
@@ -136,7 +136,7 @@ export default function BreilhTable({ verbatims }: Props) {
                           </td>
                         )}
                         {isFirstCode && (
-                          <td rowSpan={rowCount} className="p-3 border-r border-gray-200 align-top font-bold text-[#8f203d]">
+                          <td rowSpan={rowCount} className="p-3 border-r border-gray-200 align-top font-bold text-accent" style={{ color: 'var(--accent)' }}>
                             {catName}
                           </td>
                         )}

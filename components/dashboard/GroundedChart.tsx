@@ -30,7 +30,7 @@ interface Props {
 const GT_COLORS = {
   open:      '#7c6af7',
   axial:     '#3b82f6',
-  selective: '#8f203d',
+  selective: '#0358a1',
   unknown:   '#94a3b8',
 };
 

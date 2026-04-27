@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { db } from '@/lib/db';
+import { useProjectContext } from '@/components/ProjectProvider';
 import type { VerbatimResult } from '@/types';
 import * as d3 from 'd3';
 import { ZoomIn, ZoomOut, Download, RotateCcw } from 'lucide-react';
@@ -20,6 +21,7 @@ interface Cell {
 }
 
 export default function ConcurrenceMatrix({ projectId, onSelect, verbatims }: Props) {
+  const { codes } = useProjectContext();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [cells, setCells] = useState<Cell[]>([]);
@@ -39,15 +41,16 @@ export default function ConcurrenceMatrix({ projectId, onSelect, verbatims }: Pr
   }, [projectId, verbatims]);
 
   async function computeMatrix() {
+    if (verbatims.length === 0 || codes.length === 0) return;
     setLoading(true);
-    const annotations = await db.annotations.where('projectId').equals(projectId).toArray();
-    const codes = await db.codes.where('projectId').equals(projectId).toArray();
+
     const codeMap = new Map(codes.map(c => [c.id!, c]));
 
+    // Agrupar por documento para encontrar co-ocurrencias
     const byDoc = new Map<number, number[]>();
-    annotations.forEach(a => {
-      if (!byDoc.has(a.documentId)) byDoc.set(a.documentId, []);
-      byDoc.get(a.documentId)!.push(a.codeId);
+    verbatims.forEach(v => {
+      if (!byDoc.has(v.documentId)) byDoc.set(v.documentId, []);
+      byDoc.get(v.documentId)!.push(v.codeId);
     });
 
     const coMatrix = new Map<string, number>();
@@ -61,16 +64,21 @@ export default function ConcurrenceMatrix({ projectId, onSelect, verbatims }: Pr
       }
     });
 
-    const activeCodeIds = Array.from(new Set(annotations.map(a => a.codeId)));
-    const activeCodes = activeCodeIds.map(id => codeMap.get(id)).filter(Boolean) as typeof codes;
-    setCodeNames(activeCodes.map(c => ({ id: c.id!, name: c.name, color: c.color })));
+    const activeCodeIds = Array.from(new Set(verbatims.map(v => v.codeId)));
+    const activeCodes = activeCodeIds.map(id => codeMap.get(id)).filter(Boolean);
+    setCodeNames(activeCodes.map(c => ({ id: c!.id!, name: c!.name, color: c!.color })));
 
     const result: Cell[] = [];
     coMatrix.forEach((count, key) => {
       const [a, b] = key.split('_').map(Number);
       const cA = codeMap.get(a), cB = codeMap.get(b);
       if (!cA || !cB) return;
-      result.push({ codeAId: a, codeBId: b, codeAName: cA.name, codeBName: cB.name, codeAColor: cA.color, codeBColor: cB.color, count });
+      result.push({ 
+        codeAId: a, codeBId: b, 
+        codeAName: cA.name, codeBName: cB.name, 
+        codeAColor: cA.color, codeBColor: cB.color, 
+        count 
+      });
     });
 
     setCells(result);

@@ -155,11 +155,9 @@ export default function LoginPage() {
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
             <Mail size={14}/> Centro de Ayuda
           </h3>
-          <ul className="text-[11px] text-slate-500 space-y-2 leading-tight">
-            <li className="flex gap-2"><span>•</span> Revisa tu carpeta de <b>Spam</b> para el correo de confirmación de cuenta.</li>
-            <li className="flex gap-2"><span>•</span> Si tienes problemas técnicos persistentes, comunícate con el <b>administrador del sistema</b>.</li>
-            <li className="flex gap-2"><span>•</span> Recomendamos usar <b>Google Chrome</b> o navegadores modernos para mayor estabilidad.</li>
-          </ul>
+          <p className="text-[11px] text-slate-500 leading-relaxed text-center">
+            Revisa tu carpeta de Spam para el correo de confirmación. Si tienes problemas técnicos persistentes, comunícate con el administrador del sistema. Recomendamos usar Google Chrome o navegadores modernos para mayor estabilidad.
+          </p>
         </div>
       </div>
     </div>

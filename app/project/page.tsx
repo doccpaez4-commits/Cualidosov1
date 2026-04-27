@@ -12,6 +12,7 @@ import {
   Users, BookOpen, Microscope, Download, Pencil
 } from 'lucide-react';
 import { exportProject } from '@/lib/exportProject';
+import BackupReminder from '@/components/ui/BackupReminder';
 
 const LENTE_ICONS: Record<string, React.ReactNode> = {
   free:          <Pencil size={13}/>,
@@ -172,6 +173,9 @@ export default function ProjectPage() {
         isOpen={mentorOpen}
         onToggle={toggleMentor}
       />
+
+      {/* Recordatorio de Respaldo */}
+      <BackupReminder onExport={handleExport} />
     </div>
   );
 }
