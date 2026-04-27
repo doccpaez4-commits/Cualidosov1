@@ -13,21 +13,37 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     async function checkAuth() {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (pathname !== '/login') {
-        if (!hasKey() || !session) {
-          router.replace('/login');
-        } else {
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+        if (!supabaseUrl || !supabaseKey) {
+          console.error('Supabase configuration missing');
           setIsChecking(false);
+          if (pathname !== '/login') router.replace('/login');
+          return;
         }
-      } else {
-        if (session && hasKey()) {
-           router.replace('/');
+
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (pathname !== '/login') {
+          if (!hasKey() || !session) {
+            router.replace('/login');
+          } else {
+            setIsChecking(false);
+          }
         } else {
-           setIsChecking(false);
+          if (session && hasKey()) {
+             router.replace('/');
+          } else {
+             setIsChecking(false);
+          }
         }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsChecking(false);
+        if (pathname !== '/login') router.replace('/login');
       }
     }
     checkAuth();
