@@ -175,13 +175,13 @@ export default function CodeTree() {
                 value={editDesc} onChange={e => setEditDesc(e.target.value)} />
               {isBreilh && (
                 <>
-                  <select className="input text-[10px] py-0 h-6 w-full mb-1" value={editType || 'none'} onChange={e => setEditType(e.target.value as any)}>
+                  <select className="input text-xs py-1.5 h-9 w-full mb-2" value={editType || 'none'} onChange={e => setEditType(e.target.value as any)}>
                     <option value="none">Proceso: No aplica</option>
                     <option value="protector">Proceso Protector 🟢</option>
                     <option value="malsano">Proceso Malsano 🔴</option>
                   </select>
-                  <select className="input text-[10px] py-0 h-6 w-full" value={editS || 'none'} onChange={e => setEditS(e.target.value as any)}>
-                    <option value="none">S: No aplica</option>
+                  <select className="input text-xs py-1.5 h-9 w-full" value={editS || 'none'} onChange={e => setEditS(e.target.value as any)}>
+                    <option value="none">S de la vida: No aplica</option>
                     <option value="soberania">Soberanía</option>
                     <option value="sustentabilidad">Sustentabilidad</option>
                     <option value="seguridad">Seguridad</option>
@@ -285,12 +285,12 @@ export default function CodeTree() {
 
             {isBreilh && (
               <div className="space-y-1.5">
-                <select className="input text-[10px] py-1 h-7" value={newCodeType} onChange={e => setNewCodeType(e.target.value as any)}>
+                <select className="input text-xs py-1.5 h-9 w-full" value={newCodeType} onChange={e => setNewCodeType(e.target.value as any)}>
                   <option value="none">Proceso: No aplica</option>
                   <option value="protector">Proceso Protector 🟢</option>
                   <option value="malsano">Proceso Malsano 🔴</option>
                 </select>
-                <select className="input text-[10px] py-1 h-7" value={newCodeSDeLaVida} onChange={e => setNewCodeSDeLaVida(e.target.value as any)}>
+                <select className="input text-xs py-1.5 h-9 w-full" value={newCodeSDeLaVida} onChange={e => setNewCodeSDeLaVida(e.target.value as any)}>
                   <option value="none">S de la vida: No aplica</option>
                   <option value="soberania">Soberanía</option>
                   <option value="sustentabilidad">Sustentabilidad</option>
