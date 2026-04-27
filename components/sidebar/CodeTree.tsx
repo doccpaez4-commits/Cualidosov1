@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useProjectContext } from '@/components/ProjectProvider';
 import { db } from '@/lib/db';
 import { HexColorPicker } from 'react-colorful';
@@ -28,22 +28,23 @@ const PRESET_COLORS = [
 export default function CodeTree() {
   const { codes, categories, activeCodeId, setActiveCodeId, refreshCodes, project, activeDocumentId } = useProjectContext();
   
-  // Conteo de hallazgos para el documento activo
-  const activeDocAnnotations = useLiveQuery(async () => {
-    if (!activeDocumentId) return new Map<number, number>();
-    try {
-      const annots = await db.annotations.where('documentId').equals(activeDocumentId).toArray();
-      const counts = new Map<number, number>();
-      annots.forEach(a => {
-        counts.set(a.codeId, (counts.get(a.codeId) || 0) + 1);
-      });
-      return counts;
-    } catch (e) {
-      return new Map<number, number>();
-    }
-  }, [activeDocumentId], new Map<number, number>());
+  // Consulta de anotaciones (hallazgos) del documento activo
+  const rawAnnotations = useLiveQuery(
+    () => activeDocumentId ? db.annotations.where('documentId').equals(activeDocumentId).toArray() : Promise.resolve([]),
+    [activeDocumentId]
+  );
 
-  if (!project) return null;
+  // Procesar conteos con useMemo para estabilidad total
+  const activeDocAnnotations = useMemo(() => {
+    const counts = new Map<number, number>();
+    if (!rawAnnotations) return counts;
+    rawAnnotations.forEach(a => {
+      counts.set(a.codeId, (counts.get(a.codeId) || 0) + 1);
+    });
+    return counts;
+  }, [rawAnnotations]);
+
+  if (!project || !project.id) return null;
 
   const [showNewCode, setShowNewCode] = useState(false);
   const [showNewCat, setShowNewCat] = useState(false);

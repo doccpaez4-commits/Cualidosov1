@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Project, BreilhDomain } from '@/types';
 import { db, addEncryptedMemo } from '@/lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -118,29 +118,44 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
     setMemoContent('');
   }
 
-  // Mapear dominios y 4S a cada código
-  const codeMetaMap = new Map(codes?.map(c => [
-    c.id, 
-    { 
-      domain: categories?.find(cat => cat.id === c.categoryId)?.domain || 'none',
-      s: c.sDeLaVida || 'none'
-    }
-  ]) || []);
+  // Mapear dominios y 4S a cada código (con useMemo para estabilidad)
+  const codeMetaMap = useMemo(() => {
+    const map = new Map<number, { domain: string; s: string }>();
+    if (!codes || !categories) return map;
+    codes.forEach(c => {
+      const cat = categories.find(cat => cat.id === c.categoryId);
+      map.set(c.id!, {
+        domain: cat?.domain || 'none',
+        s: c.sDeLaVida || 'none'
+      });
+    });
+    return map;
+  }, [codes, categories]);
   
-  const domainCounts: Record<BreilhDomain, number> = {
-    general:    annotations?.filter(a => codeMetaMap.get(a.codeId)?.domain === 'general').length ?? 0,
-    particular: annotations?.filter(a => codeMetaMap.get(a.codeId)?.domain === 'particular').length ?? 0,
-    singular:   annotations?.filter(a => codeMetaMap.get(a.codeId)?.domain === 'singular').length ?? 0,
-    none:       annotations?.filter(a => codeMetaMap.get(a.codeId)?.domain === 'none').length ?? 0,
-  };
+  const domainCounts = useMemo(() => {
+    const counts: Record<BreilhDomain, number> = { general: 0, particular: 0, singular: 0, none: 0 };
+    if (!annotations) return counts;
+    annotations.forEach(a => {
+      const meta = codeMetaMap.get(a.codeId);
+      if (meta) {
+        const d = meta.domain as keyof typeof counts;
+        if (counts[d] !== undefined) counts[d]++;
+      }
+    });
+    return counts;
+  }, [annotations, codeMetaMap]);
 
-  const sCounts: Record<string, number> = {
-    sustentabilidad: annotations?.filter(a => codeMetaMap.get(a.codeId)?.s === 'sustentabilidad').length ?? 0,
-    soberania:       annotations?.filter(a => codeMetaMap.get(a.codeId)?.s === 'soberania').length ?? 0,
-    solidaridad:     annotations?.filter(a => codeMetaMap.get(a.codeId)?.s === 'solidaridad').length ?? 0,
-    seguridad:       annotations?.filter(a => codeMetaMap.get(a.codeId)?.s === 'seguridad').length ?? 0,
-    none:            annotations?.filter(a => codeMetaMap.get(a.codeId)?.s === 'none').length ?? 0,
-  };
+  const sCounts = useMemo(() => {
+    const counts: Record<string, number> = { sustentabilidad: 0, soberania: 0, solidaridad: 0, seguridad: 0, none: 0 };
+    if (!annotations) return counts;
+    annotations.forEach(a => {
+      const meta = codeMetaMap.get(a.codeId);
+      if (meta && counts[meta.s] !== undefined) {
+        counts[meta.s]++;
+      }
+    });
+    return counts;
+  }, [annotations, codeMetaMap]);
 
   const totalAnnotations = annotations?.length || 1;
 
