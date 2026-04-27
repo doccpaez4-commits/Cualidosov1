@@ -41,6 +41,7 @@ export default function LoginPage() {
 
       // El ID del usuario en Supabase será el nombre de la DB local para aislamiento
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (session?.user?.id) {
         localStorage.setItem('cualidoso_active_user', session.user.id);
         
@@ -49,6 +50,14 @@ export default function LoginPage() {
         
         // Forzamos recarga para que lib/db.ts instancie con el nuevo ID
         window.location.href = '/';
+      } else {
+        // Probablemente requiere confirmación de email
+        if (isSignUp) {
+          setError('¡Cuenta creada! Por favor, verifica tu correo electrónico para activar tu cuenta e iniciar sesión.');
+        } else {
+          setError('No se pudo iniciar sesión. Verifica tus credenciales.');
+        }
+        setLoading(false);
       }
     } catch (err: any) {
       setError(err.message || 'Error al procesar la autenticación.');
