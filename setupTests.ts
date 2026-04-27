@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import 'fake-indexeddb/auto';
 import { clearKey } from '@/lib/crypto';
+import { beforeEach } from 'vitest';
 
 // Setup global crypto for node environment since WebCrypto is available in modern Node 19+ as global crypto
 import { webcrypto } from 'crypto';
