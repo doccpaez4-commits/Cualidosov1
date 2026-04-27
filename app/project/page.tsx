@@ -23,8 +23,8 @@ const LENTE_ICONS: Record<string, React.ReactNode> = {
 };
 
 const LENTE_COLORS: Record<string, string> = {
-  free: '#64748b', grounded: '#7c6af7', phenomenology: '#14b8a6',
-  ethnography: '#f59e0b', iap: '#10b981', breilh: '#ef4444',
+  free: '#64748b', grounded: '#0358a1', phenomenology: '#0d9488',
+  ethnography: '#b45309', iap: '#059669', breilh: '#1e293b',
 };
 
 const LENTE_LABELS: Record<string, string> = {

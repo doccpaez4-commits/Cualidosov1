@@ -18,11 +18,11 @@ import { useRef } from 'react';
 
 const LENTE_META: Record<LenteType, { label: string; color: string; icon: React.ReactNode }> = {
   free:          { label: 'Práctica Libre',       color: '#64748b', icon: <Pencil size={14}/> },
-  grounded:      { label: 'Teoría Fundamentada', color: '#7c6af7', icon: <Layers size={14}/> },
-  phenomenology: { label: 'Fenomenología',        color: '#14b8a6', icon: <FlaskConical size={14}/> },
-  ethnography:   { label: 'Etnografía',           color: '#f59e0b', icon: <Users size={14}/> },
-  iap:           { label: 'IAP (Fals Borda)',     color: '#10b981', icon: <BookOpen size={14}/> },
-  breilh:        { label: 'Metacrítica (Breilh)', color: '#ef4444', icon: <Microscope size={14}/> },
+  grounded:      { label: 'Teoría Fundamentada', color: '#0358a1', icon: <Layers size={14}/> },
+  phenomenology: { label: 'Fenomenología',        color: '#0d9488', icon: <FlaskConical size={14}/> },
+  ethnography:   { label: 'Etnografía',           color: '#b45309', icon: <Users size={14}/> },
+  iap:           { label: 'IAP (Fals Borda)',     color: '#059669', icon: <BookOpen size={14}/> },
+  breilh:        { label: 'Metacrítica (Breilh)', color: '#1e293b', icon: <Microscope size={14}/> },
 };
 
 export default function HomePage() {
@@ -43,13 +43,9 @@ export default function HomePage() {
     const accepted = localStorage.getItem('cualidoso_terms_accepted') === 'true';
     if (!accepted) setHasAcceptedTerms(false);
 
-    // Show usage modal on 2nd use (not first, not if already registered)
-    const alreadyRegistered = localStorage.getItem('cualidoso_usage_registered') === 'true';
-    const skipCount = parseInt(localStorage.getItem('cualidoso_usage_skip_count') || '0');
-    const useCount = parseInt(localStorage.getItem('cualidoso_use_count') || '0');
-    const nextCount = useCount + 1;
-    localStorage.setItem('cualidoso_use_count', String(nextCount));
-    if (!alreadyRegistered && nextCount >= 2 && skipCount < 3) {
+    // Show usage modal only once on first visit
+    const usageSeen = localStorage.getItem('cualidoso_usage_seen') === 'true';
+    if (!usageSeen) {
       setShowUsageModal(true);
     }
 
@@ -148,7 +144,7 @@ export default function HomePage() {
   if (!hasAcceptedTerms) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 relative bg-slate-50 overflow-y-auto py-12">
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(143,32,61,0.05)_0%,_transparent_50%),_radial-gradient(circle_at_30%_70%,_rgba(15,118,110,0.05)_0%,_transparent_50%)]" />
+        <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(3,88,161,0.05)_0%,_transparent_50%),_radial-gradient(circle_at_30%_70%,_rgba(15,118,110,0.05)_0%,_transparent_50%)]" />
         
         <div className="card max-w-4xl w-full p-8 md:p-12 relative z-10 shadow-2xl animate-scale-in flex flex-col md:row gap-10 items-center bg-white/90 backdrop-blur-md border-white overflow-visible">
           
@@ -206,7 +202,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs px-3 py-1 rounded-full font-medium hidden sm:block" style={{ background: '#fdf3f5', color: 'var(--accent)', border: '1px solid rgba(143,32,61,0.2)' }}>
+            <span className="text-xs px-3 py-1 rounded-full font-medium hidden sm:block" style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid rgba(3,88,161,0.2)' }}>
               ● Entorno Local Seguro
             </span>
             <div className="w-px h-6 mx-2" style={{ background: 'var(--border)' }} />
@@ -269,6 +265,27 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Información de Respaldo y Almacenamiento */}
+        <div className="mb-8 p-6 rounded-2xl border flex flex-col md:flex-row items-center gap-6 animate-fade-in" 
+          style={{ background: 'var(--accent-light)', borderColor: 'rgba(3,88,161,0.15)' }}>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: '#fff', color: 'var(--accent)' }}>
+            <Shield size={24} />
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h3 className="font-bold text-sm mb-1" style={{ color: 'var(--accent)' }}>Tu trabajo es privado y local</h3>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              Para garantizar tu privacidad, Cualidoso <strong>no guarda datos en la nube</strong>. Todo se almacena en la memoria de este navegador. 
+              Si borras el historial o cambias de equipo, tus proyectos no estarán disponibles. 
+              Es <strong style={{ color: 'var(--accent)' }}>vital descargar el archivo .research</strong> periódicamente como respaldo maestro.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button className="btn btn-ghost text-xs bg-white" onClick={() => window.open('https://github.com/doccpaez4/Cualidoso', '_blank')}>
+              <BookOpen size={14} /> Documentación
+            </button>
+          </div>
+        </div>
+
         {/* Lista de proyectos */}
         <div className="bg-white rounded-xl shadow-sm border p-6" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center justify-between mb-4">
@@ -300,7 +317,7 @@ export default function HomePage() {
                     className="flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer group p-4 rounded-xl transition-all"
                     style={{ border: '1px solid var(--border)', '--hover-bg': 'var(--bg-hover)' } as React.CSSProperties}
                     onClick={() => router.push(`/project?id=${project.id}`)}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(143,32,61,0.4)'; e.currentTarget.style.background = 'var(--bg-hover)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(3,88,161,0.4)'; e.currentTarget.style.background = 'var(--bg-hover)'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'transparent'; }}
                   >
                     {/* Ícono del lente */}

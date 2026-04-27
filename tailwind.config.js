@@ -11,19 +11,19 @@ module.exports = {
         mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
-        // Paleta académica clara con tonos vinotinto
-        vinotinto: {
-          50: '#fdf3f5',
-          100: '#fbe5e9',
-          200: '#f5cdd6',
-          300: '#eda4b6',
-          400: '#e1728f',
-          500: '#cd4569',
-          600: '#ad2b4e',
-          700: '#8f203d', // Accent
-          800: '#771d36', // Accent Dark
-          900: '#641b31',
-          950: '#380b18',
+        // Paleta académica profesional en tonos azules
+        primary: {
+          50: '#f0f7ff',
+          100: '#e0effe',
+          200: '#bae0fd',
+          300: '#7cc8fb',
+          400: '#38aaf7',
+          500: '#0e8de9',
+          600: '#026ec7',
+          700: '#0358a1', // Accent
+          800: '#074a85', // Accent Dark
+          900: '#0c3f6e',
+          950: '#082849',
         },
         surface: {
           50: '#ffffff',
@@ -34,9 +34,9 @@ module.exports = {
           950: '#e4e4e7', // borders
         },
         accent: {
-          400: '#e1728f',
-          500: '#ad2b4e',
-          600: '#8f203d',
+          400: '#38aaf7',
+          500: '#026ec7',
+          600: '#0358a1',
         },
         teal: {
           400: '#2dd4bf',
@@ -48,7 +48,7 @@ module.exports = {
         },
         // Dominios Breilh
         breilh: {
-          general:    '#8f203d', // Vinotinto
+          general:    '#0358a1', // Azul Primario
           particular: '#0f766e', // Teal oscuro
           singular:   '#b45309', // Ambar oscuro
         },

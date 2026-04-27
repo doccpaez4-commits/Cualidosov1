@@ -49,13 +49,12 @@ export default function UsageModal({ onClose }: { onClose: () => void }) {
     existing.push(data);
     localStorage.setItem('cualidoso_usage_logs', JSON.stringify(existing));
     localStorage.setItem('cualidoso_usage_registered', 'true');
+    localStorage.setItem('cualidoso_usage_seen', 'true');
     onClose();
   }
 
   function skip() {
-    localStorage.setItem('cualidoso_usage_skip_count',
-      String(parseInt(localStorage.getItem('cualidoso_usage_skip_count') || '0') + 1)
-    );
+    localStorage.setItem('cualidoso_usage_seen', 'true');
     onClose();
   }
 

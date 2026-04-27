@@ -31,7 +31,7 @@ const LENTES: LenteConfig[] = [
     description:
       'Construye teoría emergente desde los datos. El sistema te guiará por las fases de codificación Abierta, Axial y Selectiva con prompts de comparación constante.',
     tools: ['Codificación Abierta / Axial / Selectiva', 'Comparación constante', 'Memo teórico', 'Categoría central'],
-    color: '#7c6af7',
+    color: '#0358a1',
     icon: <Layers size={28} />,
   },
   {
@@ -41,7 +41,7 @@ const LENTES: LenteConfig[] = [
     description:
       'Captura la esencia de la experiencia vivida. Incluye un espacio de Epojé (reducción fenomenológica) y herramientas para identificar Unidades de Significado.',
     tools: ['Unidades de Significado', 'Diario de Epojé', 'Reducción eidética', 'Descripción densa'],
-    color: '#14b8a6',
+    color: '#0d9488',
     icon: <FlaskConical size={28} />,
   },
   {
@@ -51,7 +51,7 @@ const LENTES: LenteConfig[] = [
     description:
       'Documenta prácticas culturales con descripción densa. Vincula fotos con notas de campo y codifica áreas de imágenes con polígonos (etnografía visual).',
     tools: ['Descripción densa', 'Notas de campo', 'Etnografía visual', 'Mapeo cultural'],
-    color: '#f59e0b',
+    color: '#b45309',
     icon: <Users size={28} />,
   },
   {
@@ -61,7 +61,7 @@ const LENTES: LenteConfig[] = [
     description:
       'Investigación-Acción Participativa. Sigue los ciclos de Acción-Reflexión y mapea los actores del territorio para transformar la realidad colectivamente.',
     tools: ['Ciclos Acción-Reflexión', 'Mapeo de actores', 'Triangulación comunitaria', 'Sistematización'],
-    color: '#10b981',
+    color: '#059669',
     icon: <BookOpen size={28} />,
   },
   {
@@ -71,7 +71,7 @@ const LENTES: LenteConfig[] = [
     description:
       'Clasifica cada código en los tres dominios de determinación: General (Sociedad/Estado), Particular (Modos de vida) y Singular (Individuo). Genera flujos Sankey y Matrices de Procesos Críticos.',
     tools: ['Triple Determinación', 'Dominios G-P-S', 'Procesos protectores/malsanos', 'Sankey de determinación'],
-    color: '#ef4444',
+    color: '#1e293b',
     icon: <Microscope size={28} />,
   },
 ];

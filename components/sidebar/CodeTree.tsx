@@ -344,7 +344,7 @@ export default function CodeTree() {
               <div
                 key={cat.id}
                 className="category-group"
-                onDragOver={e => { e.preventDefault(); e.currentTarget.style.background = 'rgba(143,32,61,0.06)'; }}
+                onDragOver={e => { e.preventDefault(); e.currentTarget.style.background = 'rgba(3,88,161,0.06)'; }}
                 onDragLeave={e => { e.currentTarget.style.background = ''; }}
                 onDrop={e => { e.currentTarget.style.background = ''; handleDropOnCat(e, cat.id!); }}
               >
@@ -407,7 +407,7 @@ export default function CodeTree() {
           {/* Sin categoría */}
           <div
             className="mt-4 pt-4 border-t rounded-lg transition-colors"
-            onDragOver={e => { e.preventDefault(); e.currentTarget.style.background = 'rgba(143,32,61,0.04)'; }}
+            onDragOver={e => { e.preventDefault(); e.currentTarget.style.background = 'rgba(3,88,161,0.04)'; }}
             onDragLeave={e => { e.currentTarget.style.background = ''; }}
             onDrop={e => { e.currentTarget.style.background = ''; handleDropOnCat(e, undefined); }}
           >

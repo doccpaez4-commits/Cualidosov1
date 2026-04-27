@@ -73,7 +73,7 @@ export default function LoginPage() {
   return (
     <div className="flex h-screen w-screen items-center justify-center p-4 relative bg-slate-50 overflow-hidden">
       {/* Fondo Dinámico Académico */}
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(143,32,61,0.03)_0%,_transparent_40%),_radial-gradient(circle_at_80%_80%,_rgba(15,118,110,0.03)_0%,_transparent_40%)]" />
+      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(3,88,161,0.03)_0%,_transparent_40%),_radial-gradient(circle_at_80%_80%,_rgba(15,118,110,0.03)_0%,_transparent_40%)]" />
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent via-teal-600 to-accent opacity-50" style={{ backgroundColor: 'var(--accent)' }} />
 
       <div className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-white rounded-3xl p-10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] flex flex-col items-center relative z-10">
@@ -156,9 +156,9 @@ export default function LoginPage() {
             <Mail size={14}/> Centro de Ayuda
           </h3>
           <ul className="text-[11px] text-slate-500 space-y-2 leading-tight">
-            <li className="flex gap-2"><span>•</span> Revisa tu carpeta de <b>Spam</b> para el correo de activación.</li>
-            <li className="flex gap-2"><span>•</span> Si eres administrador, desactiva <b>"Confirm Email"</b> en Supabase.</li>
-            <li className="flex gap-2"><span>•</span> Usa el modo <b>Incógnito</b> si tienes problemas de caché.</li>
+            <li className="flex gap-2"><span>•</span> Revisa tu carpeta de <b>Spam</b> para el correo de confirmación de cuenta.</li>
+            <li className="flex gap-2"><span>•</span> Si tienes problemas técnicos persistentes, comunícate con el <b>administrador del sistema</b>.</li>
+            <li className="flex gap-2"><span>•</span> Recomendamos usar <b>Google Chrome</b> o navegadores modernos para mayor estabilidad.</li>
           </ul>
         </div>
       </div>
