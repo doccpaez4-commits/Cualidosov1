@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { exportProject } from '@/lib/exportProject';
+import { importProject } from '@/lib/importProject';
+import { useRef } from 'react';
 
 const LENTE_META: Record<LenteType, { label: string; color: string; icon: React.ReactNode }> = {
   free:          { label: 'Práctica Libre',       color: '#64748b', icon: <Pencil size={14}/> },
@@ -32,6 +34,7 @@ export default function HomePage() {
   const [showUsageModal, setShowUsageModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Terms and usage tracking
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean>(true); // Se inicia en true para evitar flasheos
@@ -125,40 +128,65 @@ export default function HomePage() {
     window.location.href = '/login';
   }
 
-  // ==== VISTA DE TÉRMINOS Y BIENVENIDA ====
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setLoading(true);
+      await importProject(file);
+      await loadProjects();
+      alert('Proyecto importado con éxito.');
+    } catch (err: any) {
+      alert(`Error al importar: ${err.message}`);
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  // ==== VISTA DE TÉRMINOS Y BIENVENIDA (Rediseño Centralizado) ====
   if (!hasAcceptedTerms) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8 relative" style={{ background: 'var(--bg-secondary)' }}>
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,_var(--bg-hover)_0%,_transparent_100%)] opacity-50" />
-        <div className="card max-w-2xl w-full p-10 relative z-10 shadow-2xl animate-fade-in text-center flex flex-col items-center">
+      <div className="min-h-screen flex items-center justify-center p-6 relative bg-slate-50 overflow-y-auto py-12">
+        <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(143,32,61,0.05)_0%,_transparent_50%),_radial-gradient(circle_at_30%_70%,_rgba(15,118,110,0.05)_0%,_transparent_50%)]" />
+        
+        <div className="card max-w-4xl w-full p-8 md:p-12 relative z-10 shadow-2xl animate-scale-in flex flex-col md:row gap-10 items-center bg-white/90 backdrop-blur-md border-white overflow-visible">
           
-          <img src="/cualidoso.png" alt="Cualidoso Logo" className="w-48 h-auto object-contain mb-8 mix-blend-multiply drop-shadow-md" />
-          
-          <h1 className="text-3xl font-bold mb-3" style={{ color: 'var(--accent)' }}>Bienvenido a Cualidoso</h1>
-          <p className="text-sm font-semibold uppercase tracking-widest mb-6" style={{ color: 'var(--text-muted)' }}>Versión v1.0.0</p>
-          
-          <p className="text-base leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>
-            <strong>Proyecto de Código Abierto para investigación cualitativa</strong> para democratizar el conocimiento y trabajar en pro de la soberanía sanitaria. Desarrollado por: <i>(Autores)</i>.
-          </p>
-
-          <div className="text-left bg-white p-6 rounded-xl border mb-8 text-sm" style={{ borderColor: 'var(--border)' }}>
-            <h3 className="font-bold mb-2" style={{ color: 'var(--text-primary)' }}>📚 Usos y Utilidades</h3>
-            <ul className="list-disc pl-5 mb-4 space-y-1" style={{ color: 'var(--text-secondary)' }}>
-              <li>Análisis de relatos, textos y narrativas para Teoría Fundamentada, Fenomenología, Etnografía e IAP.</li>
-              <li>Módulo analítico exclusivo para Metacrítica (Breilh).</li>
-              <li>Generación de matrices de concurrencia, jerarquías conceptuales e inferencia multinivel.</li>
-              <li>Exportación de gráficos apta para artículos científicos.</li>
-            </ul>
-
-            <h3 className="font-bold mb-2 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>🔒 Confidencialidad y Seguridad Local</h3>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              Para garantizar la confidencialidad absoluta de la información de sus <strong>personas</strong> e interlocutores, <strong>los datos NO se guardan en la nube ni viajan por internet</strong>. Cualidoso funciona 100% a nivel local en la memoria de su navegador. Si desea usar su proyecto en otra computadora, deberá descargarlo manualmente.
-            </p>
+          <div className="flex-1 text-center md:text-left">
+            <img src="/cualidoso.png" alt="Cualidoso Logo" className="w-40 h-auto mb-8 mx-auto md:mx-0 mix-blend-multiply drop-shadow-sm" />
+            <h1 className="text-4xl font-black mb-4 tracking-tight" style={{ color: 'var(--accent)' }}>Cualidoso</h1>
+            <p className="text-lg font-medium text-slate-600 mb-6 uppercase tracking-wider">Investigación Cualitativa para la Soberanía Sanitaria</p>
+            
+            <div className="space-y-4 text-slate-600 text-sm leading-relaxed">
+              <p>
+                <strong className="text-slate-900">Uso Gratuito y Privacidad Total:</strong> Esta plataforma es una herramienta de código abierto diseñada para democratizar el análisis cualitativo. Para mantener el acceso libre y proteger tu privacidad, <span className="text-accent font-bold" style={{ color: 'var(--accent)' }}>no guardamos tus datos en la nube</span>.
+              </p>
+              <p>
+                <strong className="text-slate-900">Almacenamiento Local Cifrado:</strong> Todo tu trabajo se almacena exclusivamente en la memoria local de tu navegador. Tu contraseña de acceso es la <strong className="text-slate-900">llave de cifrado</strong> que protege tus datos; sin ella, la información es inaccesible.
+              </p>
+              <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 text-amber-900">
+                <strong className="text-amber-950 block mb-1">⚠️ Aviso de Seguridad y Respaldo:</strong> 
+                Debido a que el almacenamiento es local por disponibilidad de espacio y privacidad, tus avances pueden perderse si limpias los datos del navegador. Es <strong className="underline">obligatorio</strong> descargar y guardar periódicamente el archivo maestro <code className="bg-white px-1 rounded border">.research</code> para respaldar tu información.
+              </div>
+            </div>
           </div>
 
-          <button className="btn btn-primary text-base px-8 py-3 w-full" onClick={acceptTerms}>
-            Aceptar Términos de Referencia e Iniciar Uso
-          </button>
+          <div className="w-full md:w-80 flex flex-col gap-6 flex-shrink-0">
+            <div className="bg-slate-100/50 p-6 rounded-2xl border border-slate-200 shadow-inner">
+              <h3 className="font-bold mb-4 text-slate-800 text-xs uppercase tracking-widest">Capacidades Analíticas</h3>
+              <ul className="space-y-3 text-xs text-slate-600">
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} /> Teoría Fundamentada y Etnografía</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} /> Fenomenología e IAP</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} /> Metacrítica de Breilh</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} /> Matrices de Concurrencia</li>
+              </ul>
+            </div>
+
+            <button className="btn btn-primary text-base py-4 w-full shadow-lg hover:shadow-xl transition-all" onClick={acceptTerms}>
+              Aceptar e Iniciar Investigación
+            </button>
+            <p className="text-[10px] text-center text-slate-400">Versión v1.0.0 — Software de Código Abierto</p>
+          </div>
         </div>
       </div>
     );
@@ -168,8 +196,8 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-primary)' }}>
       {/* Hero Header */}
-      <header className="border-b" style={{ borderColor: 'var(--border)', background: '#ffffff' }}>
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="border-b sticky top-0 z-50 shadow-sm" style={{ borderColor: 'var(--border)', background: '#ffffff' }}>
+        <div className="w-full px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <img src="/cualidoso.png" alt="Cualidoso" className="w-12 h-auto object-contain mix-blend-multiply" />
             <div>
@@ -198,7 +226,7 @@ export default function HomePage() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-10">
+      <main className="flex-1 w-full px-8 py-10">
         
         {/* Actions Row */}
         <div className="flex flex-wrap items-end gap-6 mb-8">
@@ -228,7 +256,14 @@ export default function HomePage() {
             <p className="text-xs font-semibold uppercase tracking-widest mb-2 text-right" style={{ color: 'var(--text-muted)' }}>
               Restaurar Copia
             </p>
-            <button className="btn btn-ghost" onClick={() => alert('Función de importación en desarrollo.')}>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImport}
+              accept=".research"
+              className="hidden"
+            />
+            <button className="btn btn-ghost" onClick={() => fileInputRef.current?.click()}>
               <Upload size={16} /> Importar Proyecto (.research)
             </button>
           </div>

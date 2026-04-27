@@ -4,46 +4,44 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Variables globales (Modo Claro - Vinotinto y Blanco Académico) ── */
+/* ── Variables globales (Diseño Académico Imponente) ── */
 :root {
-  --bg-primary:   #ffffff;     /* Blanco limpio para el lienzo */
-  --bg-secondary: #fbfbfc;     /* Gris súper sutil para barras laterales */
+  --bg-primary:   #ffffff;     /* Blanco marfil académico */
+  --bg-secondary: #f8fafc;     /* Slate muy claro */
   --bg-card:      #ffffff;
-  --bg-hover:     #f4f4f5;
-  --border:       #e4e4e7;     /* Gris claro casi imperceptible */
+  --bg-hover:     #f1f5f9;
+  --border:       #e2e8f0;     /* Borde más definido */
   --border-focus: rgba(143, 32, 61, 0.4);
   
-  --text-primary:   #18181b;   /* Casi negro */
-  --text-secondary: #52525b;   /* Gris medio */
-  --text-muted:     #a1a1aa;   /* Gris claro */
+  --text-primary:   #0f172a;   /* Slate 900 - Contraste alto */
+  --text-secondary: #334155;   /* Slate 700 */
+  --text-muted:     #64748b;   /* Slate 500 */
   
-  --accent:      #8f203d;      /* Vinotinto principal */
-  --accent-dark: #771d36;      /* Vinotinto oscuro */
-  --teal:        #0f766e;
-  --rose:        #be123c;
-
-  /* Dominios Breilh */
-  --breilh-general:    #8f203d;
-  --breilh-particular: #0f766e;
-  --breilh-singular:   #b45309;
+  --accent:      #8f203d;      /* Vinotinto Cualidoso */
+  --accent-dark: #6e182f;      /* Vinotinto Profundo */
+  --accent-light: #fdf2f4;
+  --teal:        #0d9488;
+  --rose:        #e11d48;
+  
+  /* Sombras Modernas */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-/* ── Fluid Typography (responsiva por viewport) ─────────────────────────── */
-/* Scale: 12px @ 320px → 14px @ 1280px → 16px @ 1920px */
+/* ── Fluid Typography ────────────────────────────────────────────────────── */
 :root {
-  font-size: clamp(12px, 0.875rem + 0.25vw, 16px);
+  font-size: 16px;
 }
 
 html, body {
   margin: 0; padding: 0;
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, sans-serif;
-  /* Fluid base: 13px en pantallas medianas, escala suavemente */
-  font-size: clamp(12px, calc(11px + 0.3vw), 15px);
-  line-height: 1.65;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  line-height: 1.6;
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 
