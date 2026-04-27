@@ -133,7 +133,19 @@ export default function LoginPage() {
            </button>
         </div>
 
-        <div className="mt-8 text-xs text-center flex flex-col gap-1" style={{ color: 'var(--text-muted)' }}>
+        <div className="mt-8 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+          <h3 className="text-xs font-bold text-blue-800 mb-2 flex items-center gap-1">
+            <Mail size={12}/> ¿No recibiste el correo o tienes problemas?
+          </h3>
+          <ul className="text-[10px] text-blue-700 space-y-1 list-disc pl-3 leading-tight">
+            <li>Revisa la carpeta de <b>Spam</b> o Correo no deseado.</li>
+            <li>Si eres el administrador, desactiva <b>"Confirm Email"</b> en el panel de Supabase (Auth {'>'} Settings) para permitir acceso inmediato.</li>
+            <li>Asegúrate de que las <b>Variables de Entorno</b> en Vercel no tengan espacios extra.</li>
+            <li>Si el error persiste, intenta abrir la página en modo <b>Incógnito</b>.</li>
+          </ul>
+        </div>
+
+        <div className="mt-6 text-xs text-center flex flex-col gap-1" style={{ color: 'var(--text-muted)' }}>
           <span>☁️ Autenticación Cloud (Supabase)</span>
           <span>🔒 Cifrado Local (WebCrypto)</span>
         </div>
