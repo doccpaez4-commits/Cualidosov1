@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useProjectContext } from '@/components/ProjectProvider';
 import { db } from '@/lib/db';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { HexColorPicker } from 'react-colorful';
 import {
   Plus, ChevronDown, ChevronRight, Tag, FolderPlus,
