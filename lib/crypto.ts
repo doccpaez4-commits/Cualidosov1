@@ -3,19 +3,25 @@
  * Utiliza WebCrypto API (AES-GCM con derivación de llave PBKDF2)
  */
 
-// Llave en memoria (nunca se guarda en localStorage por seguridad)
+// Llave en memoria para uso inmediato
 let currentKey: CryptoKey | null = null;
 
-// Sal constante para derivación (en una app real se generaría por usuario,
-// pero como es local-first de un solo usuario, una constante es suficiente).
+// Sal constante para derivación
 const SALT = new TextEncoder().encode('cualidoso-local-salt-v1');
 
 export function hasKey(): boolean {
-  return currentKey !== null;
+  if (currentKey !== null) return true;
+  if (typeof window !== 'undefined') {
+    return sessionStorage.getItem('cualidoso_session_key') !== null;
+  }
+  return false;
 }
 
 export function clearKey(): void {
   currentKey = null;
+  if (typeof window !== 'undefined') {
+    sessionStorage.removeItem('cualidoso_session_key');
+  }
 }
 
 /**
@@ -43,12 +49,31 @@ export async function deriveKey(password: string): Promise<void> {
     false,
     ['encrypt', 'decrypt']
   );
+
+  // Guardamos la contraseña (o una versión de ella) en sessionStorage 
+  // para poder reconstruir la llave tras un refresco de página.
+  // Esto es más seguro que localStorage porque se borra al cerrar la pestaña.
+  sessionStorage.setItem('cualidoso_session_key', password);
+}
+
+/**
+ * Recupera la llave si existe en la sesión pero no en la memoria (tras un refresco)
+ */
+async function ensureKey(): Promise<void> {
+  if (currentKey) return;
+  if (typeof window === 'undefined') return;
+  
+  const stored = sessionStorage.getItem('cualidoso_session_key');
+  if (stored) {
+    await deriveKey(stored);
+  }
 }
 
 /**
  * Cifra un string. Retorna formato: "ivBase64:ciphertextBase64"
  */
 export async function encryptText(plainText: string): Promise<string> {
+  await ensureKey();
   if (!currentKey) throw new Error('No crypto key available. Please login.');
   if (!plainText) return plainText;
 
@@ -71,6 +96,7 @@ export async function encryptText(plainText: string): Promise<string> {
  * Descifra un string con formato "ivBase64:ciphertextBase64"
  */
 export async function decryptText(cipherTextWithIv: string): Promise<string> {
+  await ensureKey();
   if (!currentKey) throw new Error('No crypto key available. Please login.');
   if (!cipherTextWithIv || !cipherTextWithIv.includes(':')) return cipherTextWithIv; // No está cifrado
 

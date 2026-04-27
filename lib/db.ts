@@ -57,12 +57,21 @@ export class CualidosoDB extends Dexie {
   }
 }
 
-// Obtenemos el usuario activo
-const activeUser = typeof window !== 'undefined' ? localStorage.getItem('cualidoso_active_user') : null;
-const dbName = activeUser ? `CualidosoDB_${activeUser}` : 'CualidosoDB_offline';
+// Obtenemos el nombre de la base de datos dinámicamente
+function getDbName() {
+  const activeUser = typeof window !== 'undefined' ? localStorage.getItem('cualidoso_active_user') : null;
+  return activeUser ? `CualidosoDB_${activeUser}` : 'CualidosoDB_offline';
+}
 
-// Singleton exportado - se usa en toda la app
-export const db = new CualidosoDB(dbName);
+// Singleton inicial
+export let db = new CualidosoDB(getDbName());
+
+/**
+ * Reinicializa la instancia de la base de datos (útil tras el login sin recargar página)
+ */
+export function resetDatabaseInstance() {
+  db = new CualidosoDB(getDbName());
+}
 
 // ─── Helpers Criptográficos para Escritura ────────────────────────────────────
 

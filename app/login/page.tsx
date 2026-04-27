@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { deriveKey } from '@/lib/crypto';
 import { createClient } from '@/utils/supabase/client';
+import { resetDatabaseInstance } from '@/lib/db';
 import { Lock, Unlock, KeyRound, Mail } from 'lucide-react';
 
 export default function LoginPage() {
@@ -48,7 +49,10 @@ export default function LoginPage() {
         // La contraseña sigue siendo la semilla para cifrar la BD local (E2EE)
         await deriveKey(password);
         
-        // Forzamos recarga para que lib/db.ts instancie con el nuevo ID
+        // Reiniciamos la instancia de la DB para que use el nuevo ID de usuario
+        resetDatabaseInstance();
+
+        // Ahora podemos usar window.location.href porque la llave persiste en sessionStorage
         window.location.href = '/';
       } else {
         // Probablemente requiere confirmación de email
