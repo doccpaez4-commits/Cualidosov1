@@ -5,7 +5,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import type { VerbatimResult } from '@/types';
-import { Download, Info } from 'lucide-react';
+import { Download, Info, BarChart2 } from 'lucide-react';
 
 interface TrendChartProps {
   verbatims: VerbatimResult[];

@@ -71,18 +71,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center p-4 relative bg-slate-50 overflow-hidden">
-      {/* Fondo Dinámico Académico */}
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(3,88,161,0.03)_0%,_transparent_40%),_radial-gradient(circle_at_80%_80%,_rgba(15,118,110,0.03)_0%,_transparent_40%)]" />
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent via-teal-600 to-accent opacity-50" style={{ backgroundColor: 'var(--accent)' }} />
+    <div className="flex h-screen w-screen items-center justify-center p-4 relative bg-slate-50 overflow-hidden" style={{
+      backgroundImage: "url('/fondo-2.png')",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat"
+    }}>
+      {/* Overlay para contraste */}
+      <div className="absolute inset-0 bg-slate-900/40 z-0" />
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent via-teal-600 to-accent z-20" style={{ backgroundColor: 'var(--accent)' }} />
 
-      <div className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-white rounded-3xl p-10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] flex flex-col items-center relative z-10">
+      <div className="w-full max-w-md bg-white/95 backdrop-blur-xl border border-white/50 rounded-[2rem] p-10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center relative z-10">
         
-        <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-8 rotate-3 shadow-sm">
-          <div className="-rotate-3">
-            {isSignUp ? <KeyRound size={40} style={{ color: 'var(--accent)' }}/> : <Lock size={40} style={{ color: 'var(--accent)' }}/>}
-          </div>
-        </div>
+        <img src="/logo.png" alt="Cualidoso Logo" className="w-48 h-auto mb-6 drop-shadow-md" />
 
         <h1 className="text-3xl font-black mb-2 tracking-tight text-slate-900">
           {isSignUp ? 'Crear Cuenta' : 'Acceso Seguro'}

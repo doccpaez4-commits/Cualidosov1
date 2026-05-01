@@ -12,7 +12,7 @@ import {
 import type { Code, Category, BreilhDomain, GroundedPhase } from '@/types';
 
 const DOMAIN_LABELS: Record<BreilhDomain, string> = {
-  general: 'General', particular: 'Particular', singular: 'Singular', none: 'No aplica',
+  general: 'General', particular: 'Particular', singular: 'Individual', none: 'No aplica',
 };
 const DOMAIN_COLORS: Record<BreilhDomain, string> = {
   general: '#7c6af7', particular: '#14b8a6', singular: '#fb7185', none: '#cbd5e1',
@@ -30,7 +30,7 @@ export default function CodeTree() {
   const { codes, categories, activeCodeId, setActiveCodeId, refreshCodes, project, activeDocumentId } = useProjectContext();
   
   // Consulta de anotaciones (hallazgos) del documento activo
-  const rawAnnotations = useLiveQuery(
+  const rawAnnotations = useLiveQuery<import('@/types').Annotation[]>(
     () => activeDocumentId ? db.annotations.where('documentId').equals(activeDocumentId).toArray() : Promise.resolve([]),
     [activeDocumentId]
   );
@@ -70,11 +70,16 @@ export default function CodeTree() {
   const [expandedCats, setExpandedCats] = useState<Set<number>>(new Set());
   const [editingCodeId, setEditingCodeId] = useState<number | null>(null);
   const [editingCatId, setEditingCatId] = useState<number | null>(null);
+  const [confirmingId, setConfirmingId] = useState<number | null>(null);
+  const [confirmingType, setConfirmingType] = useState<'code' | 'cat' | null>(null);
+  
   const [editName, setEditName] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [editType, setEditType] = useState<'protector' | 'malsano' | 'none' | undefined>(undefined);
   const [editS, setEditS] = useState<'soberania' | 'sustentabilidad' | 'seguridad' | 'solidaridad' | 'none' | undefined>(undefined);
   const [editDomain, setEditDomain] = useState<BreilhDomain | undefined>(undefined);
+  const [editColor, setEditColor] = useState(PRESET_COLORS[0]);
+  const [showEditColorPicker, setShowEditColorPicker] = useState(false);
 
   const isBreilh = project?.lente === 'breilh';
   const isGrounded = project?.lente === 'grounded';
@@ -108,19 +113,20 @@ export default function CodeTree() {
     setNewCatName(''); setNewCatDesc(''); setShowNewCat(false);
   }
 
-  async function deleteCode(e: React.MouseEvent, id: number) {
-    e.stopPropagation();
+  async function confirmDeleteCode(id: number) {
     await db.annotations.where('codeId').equals(id).delete();
     await db.codes.delete(id);
     await refreshCodes();
+    setConfirmingId(null);
+    setConfirmingType(null);
   }
 
-  async function deleteCat(e: React.MouseEvent, id: number) {
-    e.stopPropagation();
-    if (!confirm('¿Eliminar esta categoría? Los códigos asociados quedarán sin categoría.')) return;
+  async function confirmDeleteCat(id: number) {
     await db.codes.where('categoryId').equals(id).modify({ categoryId: undefined });
     await db.categories.delete(id);
     await refreshCodes();
+    setConfirmingId(null);
+    setConfirmingType(null);
   }
 
   async function saveEditCode(id: number) {
@@ -128,9 +134,11 @@ export default function CodeTree() {
       name: editName, 
       description: editDesc,
       breilhType: editType,
-      sDeLaVida: editS
+      sDeLaVida: editS,
+      color: editColor
     });
     setEditingCodeId(null);
+    setShowEditColorPicker(false);
     await refreshCodes();
   }
 
@@ -182,7 +190,21 @@ export default function CodeTree() {
         draggable
         onDragStart={e => e.dataTransfer.setData('codeId', code.id!.toString())}
         className={`code-tree-item group ${isActive ? 'active' : ''} h-auto items-start py-2`}
-        onClick={() => setActiveCodeId(isActive ? null : code.id!)}
+        onMouseDown={e => {
+          // Prevenir que el click borre la selección de texto en el visor
+          if (window.getSelection()?.toString().trim()) {
+            e.preventDefault();
+          }
+        }}
+        onClick={() => {
+          const selection = window.getSelection()?.toString().trim();
+          if (selection) {
+            // Emitir evento para que TextViewer aplique el código
+            window.dispatchEvent(new CustomEvent('apply-code', { detail: code.id }));
+          } else {
+            setActiveCodeId(isActive ? null : code.id!);
+          }
+        }}
       >
         <div className="code-dot mt-1 flex-shrink-0" style={{ background: code.color }} />
         <div className="flex-1 min-w-0 pr-1">
@@ -195,12 +217,12 @@ export default function CodeTree() {
                 value={editDesc} onChange={e => setEditDesc(e.target.value)} />
               {isBreilh && (
                 <>
-                  <select className="input text-xs py-1.5 h-9 w-full mb-2" value={editType || 'none'} onChange={e => setEditType(e.target.value as any)}>
+                  <select className="input text-xs py-1.5 h-9 w-full mb-2 bg-white text-gray-800 border-gray-200 shadow-sm" value={editType || 'none'} onChange={e => setEditType(e.target.value as any)}>
                     <option value="none">Proceso: No aplica</option>
                     <option value="protector">Proceso Protector 🟢</option>
                     <option value="malsano">Proceso Malsano 🔴</option>
                   </select>
-                  <select className="input text-xs py-1.5 h-9 w-full" value={editS || 'none'} onChange={e => setEditS(e.target.value as any)}>
+                  <select className="input text-xs py-1.5 h-9 w-full bg-white text-gray-800 border-gray-200 shadow-sm" value={editS || 'none'} onChange={e => setEditS(e.target.value as any)}>
                     <option value="none">S de la vida: No aplica</option>
                     <option value="soberania">Soberanía</option>
                     <option value="sustentabilidad">Sustentabilidad</option>
@@ -209,15 +231,34 @@ export default function CodeTree() {
                   </select>
                 </>
               )}
+              <div className="flex items-center gap-2 mt-1">
+                <button className="w-6 h-6 rounded-lg border shadow-sm relative overflow-hidden flex-shrink-0"
+                  style={{ background: editColor }}
+                  onClick={() => setShowEditColorPicker(!showEditColorPicker)}>
+                  {showEditColorPicker && <div className="absolute inset-0 bg-black/10 flex items-center justify-center"><X size={10} className="text-white"/></div>}
+                </button>
+                <div className="flex flex-wrap gap-1 flex-1">
+                  {PRESET_COLORS.map(c => (
+                    <button key={c} className="w-4 h-4 rounded shadow-xs hover:scale-110 transition-transform"
+                      style={{ background: c, border: editColor === c ? '2px solid rgba(0,0,0,0.2)' : 'none' }}
+                      onClick={() => { setEditColor(c); setShowEditColorPicker(false); }} />
+                  ))}
+                </div>
+              </div>
+              {showEditColorPicker && (
+                <div className="relative z-10 p-1 bg-white border rounded shadow-xl mt-1">
+                  <HexColorPicker color={editColor} onChange={setEditColor} style={{ width: '100%', height: '100px' }} />
+                </div>
+              )}
               <div className="flex gap-1 mt-1">
                 <button className="btn-icon bg-green-50 text-green-600" onClick={() => saveEditCode(code.id!)}><Check size={12}/></button>
-                <button className="btn-icon bg-red-50 text-red-600" onClick={() => setEditingCodeId(null)}><X size={12}/></button>
+                <button className="btn-icon bg-red-50 text-red-600" onClick={() => { setEditingCodeId(null); setShowEditColorPicker(false); }}><X size={12}/></button>
               </div>
             </div>
           ) : (
             <>
               <div className="flex items-center gap-1.5 overflow-hidden">
-                <span className="flex-1 truncate text-xs font-medium"
+                <span className="flex-1 truncate text-xs font-medium" title={code.name}
                   style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                   {code.name} {activeDocAnnotations.get(code.id!) !== undefined && activeDocAnnotations.get(code.id!)! > 0 && (
                     <span className="font-bold text-accent ml-1" style={{ color: 'var(--accent)' }}>
@@ -242,19 +283,30 @@ export default function CodeTree() {
 
         {!isEditing && (
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 flex-shrink-0 pt-0.5">
-            <button className="btn-icon" onClick={e => { 
-                e.stopPropagation(); 
-                setEditingCodeId(code.id!); 
-                setEditName(code.name); 
-                setEditDesc(code.description || ''); 
-                setEditType(code.breilhType || 'none');
-                setEditS(code.sDeLaVida || 'none');
-              }}>
-              <Edit2 size={11}/>
-            </button>
-            <button className="btn-icon" onClick={e => deleteCode(e, code.id!)}>
-              <Trash2 size={11} style={{ color: 'var(--rose)' }}/>
-            </button>
+            {confirmingId === code.id && confirmingType === 'code' ? (
+              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                <button className="text-[9px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold hover:bg-red-700" onClick={() => confirmDeleteCode(code.id!)}>OK</button>
+                <button className="text-[9px] bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded font-bold hover:bg-gray-300" onClick={() => { setConfirmingId(null); setConfirmingType(null); }}>No</button>
+              </div>
+            ) : (
+              <>
+                <button className="btn-icon" onClick={e => { 
+                    e.stopPropagation(); 
+                    setEditingCodeId(code.id!); 
+                    setEditName(code.name); 
+                    setEditDesc(code.description || ''); 
+                    setEditType(code.breilhType || 'none');
+                    setEditS(code.sDeLaVida || 'none');
+                    setEditColor(code.color || PRESET_COLORS[0]);
+                    setShowEditColorPicker(false);
+                  }}>
+                  <Edit2 size={11}/>
+                </button>
+                <button className="btn-icon" onClick={e => { e.stopPropagation(); setConfirmingId(code.id!); setConfirmingType('code'); }}>
+                  <Trash2 size={11} style={{ color: 'var(--rose)' }}/>
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -309,12 +361,12 @@ export default function CodeTree() {
 
             {isBreilh && (
               <div className="space-y-1.5">
-                <select className="input text-xs py-1.5 h-9 w-full" value={newCodeType} onChange={e => setNewCodeType(e.target.value as any)}>
+                <select className="input text-xs py-1.5 h-9 w-full bg-white text-gray-800 border-gray-200 shadow-sm" value={newCodeType} onChange={e => setNewCodeType(e.target.value as any)}>
                   <option value="none">Proceso: No aplica</option>
                   <option value="protector">Proceso Protector 🟢</option>
                   <option value="malsano">Proceso Malsano 🔴</option>
                 </select>
-                <select className="input text-xs py-1.5 h-9 w-full" value={newCodeSDeLaVida} onChange={e => setNewCodeSDeLaVida(e.target.value as any)}>
+                <select className="input text-xs py-1.5 h-9 w-full bg-white text-gray-800 border-gray-200 shadow-sm" value={newCodeSDeLaVida} onChange={e => setNewCodeSDeLaVida(e.target.value as any)}>
                   <option value="none">S de la vida: No aplica</option>
                   <option value="soberania">Soberanía</option>
                   <option value="sustentabilidad">Sustentabilidad</option>
@@ -382,12 +434,19 @@ export default function CodeTree() {
                         <input className="input text-xs font-bold w-full py-1" value={editName} onChange={e => setEditName(e.target.value)} autoFocus />
                         <textarea className="input text-[10px] w-full py-1" rows={2} value={editDesc} onChange={e => setEditDesc(e.target.value)} />
                         {isBreilh && (
-                          <select className="input text-[10px] py-0 h-6 w-full" value={editDomain || 'none'} onChange={e => setEditDomain(e.target.value as any)}>
-                            <option value="none">Dimensión: No aplica</option>
-                            <option value="general">General</option>
-                            <option value="particular">Particular</option>
-                            <option value="singular">Singular</option>
-                          </select>
+                          <div className="space-y-1">
+                            <label className="text-[9px] uppercase font-bold text-gray-400">Dimensión:</label>
+                            <select 
+                              className="input text-xs py-1.5 h-9 w-full bg-white border border-gray-200 text-gray-800 shadow-sm font-bold" 
+                              value={editDomain || 'none'} 
+                              onChange={e => setEditDomain(e.target.value as any)}
+                            >
+                              <option value="none">Dimensión: No aplica</option>
+                              <option value="general">General</option>
+                              <option value="particular">Particular</option>
+                              <option value="singular">Individual</option>
+                            </select>
+                          </div>
                         )}
                         <div className="flex gap-1">
                           <button className="btn-icon bg-green-50 text-green-600" onClick={() => saveEditCat(cat.id!)}><Check size={12}/></button>
@@ -396,9 +455,15 @@ export default function CodeTree() {
                       </div>
                     ) : (
                       <div className="cursor-pointer" onClick={() => toggleCat(cat.id!)}>
-                        <h4 className="text-xs font-bold uppercase tracking-tight flex items-center justify-between" style={{ color: 'var(--accent)' }}>
-                          <span className="truncate">{cat.name}</span>
-                          <span className="text-[10px] font-normal opacity-50 ml-1">({catCodes.length})</span>
+                        <h4 className="text-xs font-bold uppercase tracking-tight flex flex-wrap items-center gap-1.5" style={{ color: 'var(--accent)' }}>
+                          <span className="truncate max-w-[140px]" title={cat.name}>{cat.name}</span>
+                          {isBreilh && cat.domain && cat.domain !== 'none' && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold text-white shadow-sm"
+                              style={{ background: DOMAIN_COLORS[cat.domain] }}>
+                              {DOMAIN_LABELS[cat.domain]}
+                            </span>
+                          )}
+                          <span className="text-[10px] font-normal opacity-50">({catCodes.length})</span>
                         </h4>
                         {cat.description && (
                           <p className="text-[10px] text-gray-500 italic line-clamp-1 group-hover:line-clamp-none transition-all">
@@ -410,12 +475,21 @@ export default function CodeTree() {
                   </div>
                   {!isEditingCat && (
                     <div className="flex items-center opacity-0 group-hover:opacity-100">
-                      <button className="btn-icon" onClick={() => { setEditingCatId(cat.id!); setEditName(cat.name); setEditDesc(cat.description || ''); setEditDomain(cat.domain || 'none'); }}>
-                        <Edit2 size={10}/>
-                      </button>
-                      <button className="btn-icon" onClick={e => deleteCat(e, cat.id!)}>
-                        <Trash2 size={10} className="text-red-400"/>
-                      </button>
+                      {confirmingId === cat.id && confirmingType === 'cat' ? (
+                        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                          <button className="text-[9px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold hover:bg-red-700" onClick={() => confirmDeleteCat(cat.id!)}>Borrar</button>
+                          <button className="text-[9px] bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded font-bold hover:bg-gray-300" onClick={() => { setConfirmingId(null); setConfirmingType(null); }}>No</button>
+                        </div>
+                      ) : (
+                        <>
+                          <button className="btn-icon" onClick={() => { setEditingCatId(cat.id!); setEditName(cat.name); setEditDesc(cat.description || ''); setEditDomain(cat.domain || 'none'); }}>
+                            <Edit2 size={10}/>
+                          </button>
+                          <button className="btn-icon" onClick={e => { e.stopPropagation(); setConfirmingId(cat.id!); setConfirmingType('cat'); }}>
+                            <Trash2 size={10} className="text-red-400"/>
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>

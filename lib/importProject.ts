@@ -62,14 +62,13 @@ export async function importProject(file: File): Promise<number> {
   for (const doc of manifest.documents) {
     const { id: oldDocId, filename, ...docData } = doc;
     
-    let blobData: Blob | undefined = undefined;
+    let blobData: ArrayBuffer | undefined = undefined;
     if (filename) {
       // Extraer el blob del ZIP
-      const fileInZip = zip.file(filename.replace('files/', 'files/')); // Ya viene con prefijo o no según export
-      // Intentar con y sin prefijo por si acaso
+      const fileInZip = zip.file(filename.replace('files/', 'files/'));
       const actualFile = fileInZip || zip.file(doc.name.replace(/[^a-zA-Z0-9._-]/g, '_'));
       if (actualFile) {
-        blobData = await actualFile.async('blob');
+        blobData = await actualFile.async('arraybuffer');
       }
     }
 
@@ -79,6 +78,7 @@ export async function importProject(file: File): Promise<number> {
       blobData,
     });
     docMap.set(oldDocId!, newDocId);
+
   }
 
   // 5. Importar Anotaciones (RE-CIFRAR)
@@ -110,19 +110,19 @@ export async function importProject(file: File): Promise<number> {
   }
 
   // 7. Importar Epojé
-  for (const entry of manifest.epojeEntries) {
+  for (const entry of (manifest.epojeEntries ?? [])) {
     const { id, ...entryData } = entry;
     await db.epojeEntries.add({ ...entryData, projectId: newProjectId });
   }
 
   // 8. Importar Notas de Campo
-  for (const note of manifest.fieldNotes) {
+  for (const note of (manifest.fieldNotes ?? [])) {
     const { id, ...noteData } = note;
     await db.fieldNotes.add({ ...noteData, projectId: newProjectId });
   }
 
   // 9. Importar Ciclos IAP
-  for (const cycle of manifest.iapCycles) {
+  for (const cycle of (manifest.iapCycles ?? [])) {
     const { id, ...cycleData } = cycle;
     await db.iapCycles.add({ ...cycleData, projectId: newProjectId });
   }

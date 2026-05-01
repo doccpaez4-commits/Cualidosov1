@@ -102,9 +102,9 @@ export default function BreilhMentor({ project, selectedAnnotationId }: Props) {
   const [memoContent, setMemoContent] = useState('');
 
   // Datos para conteo en tiempo real (Anotaciones para contar uso real)
-  const codes = useLiveQuery(() => project?.id ? db.codes.where('projectId').equals(project.id).toArray() : Promise.resolve([]), [project?.id]);
-  const categories = useLiveQuery(() => project?.id ? db.categories.where('projectId').equals(project.id).toArray() : Promise.resolve([]), [project?.id]);
-  const annotations = useLiveQuery(() => project?.id ? db.annotations.where('projectId').equals(project.id).toArray() : Promise.resolve([]), [project?.id]);
+  const codes = useLiveQuery<import('@/types').Code[]>(() => project?.id ? db.codes.where('projectId').equals(project.id).toArray() : Promise.resolve([]), [project?.id]);
+  const categories = useLiveQuery<import('@/types').Category[]>(() => project?.id ? db.categories.where('projectId').equals(project.id).toArray() : Promise.resolve([]), [project?.id]);
+  const annotations = useLiveQuery<import('@/types').Annotation[]>(() => project?.id ? db.annotations.where('projectId').equals(project.id).toArray() : Promise.resolve([]), [project?.id]);
 
   if (!project?.id) return null;
 

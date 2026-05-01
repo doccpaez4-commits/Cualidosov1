@@ -14,6 +14,7 @@ interface ConceptMapProps {
 export default function ConceptMap({ verbatims, projectId }: ConceptMapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   useEffect(() => {
     if (!svgRef.current || verbatims.length === 0) return;
@@ -249,11 +250,7 @@ export default function ConceptMap({ verbatims, projectId }: ConceptMapProps) {
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   }
 
-  async function resetLayout() {
-    if (!confirm('¿Restablecer el diseño automático? Se perderán las posiciones fijas.')) return;
-    const codes = await db.codes.where('projectId').equals(projectId).toArray();
-    const cats = await db.categories.where('projectId').equals(projectId).toArray();
-    
+  async function confirmResetLayout() {
     await Promise.all([
       db.codes.where('projectId').equals(projectId).modify({ position: undefined }),
       db.categories.where('projectId').equals(projectId).modify({ position: undefined })
@@ -274,9 +271,17 @@ export default function ConceptMap({ verbatims, projectId }: ConceptMapProps) {
                 <Save size={12}/> GUARDANDO...
              </div>
           )}
-          <button onClick={resetLayout} className="btn btn-ghost btn-sm text-gray-400" title="Restablecer diseño">
-            <RefreshCw size={14}/>
-          </button>
+          {showResetConfirm ? (
+            <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-1 duration-200">
+              <span className="text-[10px] font-bold text-red-600 mr-1 uppercase">¿Restablecer?</span>
+              <button className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded" onClick={confirmResetLayout}>SÍ</button>
+              <button className="px-2 py-1 bg-gray-200 text-gray-700 text-[10px] font-bold rounded" onClick={() => setShowResetConfirm(false)}>NO</button>
+            </div>
+          ) : (
+            <button onClick={() => setShowResetConfirm(true)} className="btn btn-ghost btn-sm text-gray-400" title="Restablecer diseño">
+              <RefreshCw size={14}/>
+            </button>
+          )}
           <button onClick={downloadSVG} className="btn btn-ghost btn-sm gap-2 text-accent border border-accent/20">
             <Download size={14}/> PNG
           </button>

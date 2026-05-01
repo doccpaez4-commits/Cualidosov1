@@ -9,12 +9,13 @@ import UsageModal from '@/components/ui/UsageModal';
 import {
   Plus, FolderOpen, Trash2, Clock, FlaskConical,
   BookOpen, Users, Layers, Microscope, ChevronRight, Upload, Download, Pencil,
-  LogOut, Shield
+  LogOut, Shield, Cloud, CloudUpload, Star
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { exportProject } from '@/lib/exportProject';
 import { importProject } from '@/lib/importProject';
-import { useRef } from 'react';
+import { uploadProjectToCloud, uploadFileToCloud, isPremiumUser, listCloudProjects, downloadProjectFromCloud, CloudProject } from '@/lib/supabaseSync';
+import { useRef, useMemo } from 'react';
 
 const LENTE_META: Record<LenteType, { label: string; color: string; icon: React.ReactNode }> = {
   free:          { label: 'Práctica Libre',       color: '#64748b', icon: <Pencil size={14}/> },
@@ -33,16 +34,21 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [showUsageModal, setShowUsageModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [syncingId, setSyncingId] = useState<number | null>(null);
+  const [syncMsg, setSyncMsg] = useState('');
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [cloudProjects, setCloudProjects] = useState<CloudProject[]>([]);
+  const [loadingCloud, setLoadingCloud] = useState(false);
+  const [downloadingPath, setDownloadingPath] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Terms and usage tracking
-  const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean>(true); // Se inicia en true para evitar flasheos
+  // Auth state
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const accepted = localStorage.getItem('cualidoso_terms_accepted') === 'true';
-    if (!accepted) setHasAcceptedTerms(false);
-
     // Show usage modal only once on first visit
     const usageSeen = localStorage.getItem('cualidoso_usage_seen') === 'true';
     if (!usageSeen) {
@@ -50,28 +56,40 @@ export default function HomePage() {
     }
 
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        setUsername(session.user.email || 'Investigador');
+        const user = session.user;
+        setUsername(user.email || 'Investigador');
+        setUserId(user.id);
         // Verificamos el rol en los metadatos del usuario de Supabase
-        if (session.user.user_metadata?.role === 'admin') {
+        if (user.user_metadata?.role === 'admin') {
           setIsAdmin(true);
         }
+
+        // Verificar premium en tabla profiles
+        const premium = await isPremiumUser(user.id);
+        setIsPremium(premium);
+
+        if (premium) {
+          setLoadingCloud(true);
+          const cp = await listCloudProjects(user.id);
+          setCloudProjects(cp);
+          setLoadingCloud(false);
+        }
+
+        setIsLoggedIn(true);
+        loadProjects();
+      } else {
+        setIsLoggedIn(false);
+        setLoading(false);
       }
     });
-
-    loadProjects();
   }, []);
 
   async function loadProjects() {
     const all = await getAllProjects();
     setProjects(all);
     setLoading(false);
-  }
-
-  function acceptTerms() {
-    localStorage.setItem('cualidoso_terms_accepted', 'true');
-    setHasAcceptedTerms(true);
   }
 
   async function createProject(lente: LenteType) {
@@ -87,29 +105,31 @@ export default function HomePage() {
       lente,
       createdAt: now,
       updatedAt: now,
-      stopwords: DEFAULT_STOPWORDS,
+      stopwords: [],
     });
-
-    // (Se eliminó la creación de códigos por defecto para Metacrítica de Breilh a solicitud del usuario)
 
     router.push(`/project?id=${projectId}`);
   }
 
-  async function deleteProject(e: React.MouseEvent, id: number) {
-    e.stopPropagation();
-    if (!confirm('¿Eliminar este proyecto? Esta acción no se puede deshacer.')) return;
-    await Promise.all([
-      db.projects.delete(id),
-      db.documents.where('projectId').equals(id).delete(),
-      db.codes.where('projectId').equals(id).delete(),
-      db.categories.where('projectId').equals(id).delete(),
-      db.annotations.where('projectId').equals(id).delete(),
-      db.memos.where('projectId').equals(id).delete(),
-      db.epojeEntries.where('projectId').equals(id).delete(),
-      db.fieldNotes.where('projectId').equals(id).delete(),
-      db.iapCycles.where('projectId').equals(id).delete(),
-    ]);
-    loadProjects();
+  async function confirmDelete(id: number) {
+    setLoading(true);
+    try {
+      await Promise.all([
+        db.projects.delete(id),
+        db.documents.where('projectId').equals(id).delete(),
+        db.codes.where('projectId').equals(id).delete(),
+        db.categories.where('projectId').equals(id).delete(),
+        db.annotations.where('projectId').equals(id).delete(),
+        db.memos.where('projectId').equals(id).delete(),
+        db.epojeEntries.where('projectId').equals(id).delete(),
+        db.fieldNotes.where('projectId').equals(id).delete(),
+        db.iapCycles.where('projectId').equals(id).delete(),
+      ]);
+      await loadProjects();
+    } finally {
+      setDeletingId(null);
+      setLoading(false);
+    }
   }
 
   async function downloadProject(e: React.MouseEvent, id: number) {
@@ -129,9 +149,17 @@ export default function HomePage() {
     if (!file) return;
     try {
       setLoading(true);
-      await importProject(file);
+      const newId = await importProject(file);
+      // Si es premium, subir también al cloud
+      if (isPremium && userId) {
+        try {
+          await uploadFileToCloud(file, userId);
+        } catch {
+          // No bloquear si el cloud falla
+        }
+      }
       await loadProjects();
-      alert('Proyecto importado con éxito.');
+      alert('Proyecto importado con éxito.' + (isPremium ? ' \u2601️ Copia subida al cloud.' : ''));
     } catch (err: any) {
       alert(`Error al importar: ${err.message}`);
     } finally {
@@ -140,48 +168,126 @@ export default function HomePage() {
     }
   }
 
+  async function handleSyncToCloud(e: React.MouseEvent, projectId: number) {
+    e.stopPropagation();
+    if (!userId) return;
+    setSyncingId(projectId);
+    setSyncMsg('Subiendo...');
+    try {
+      await uploadProjectToCloud(projectId, userId, (msg) => setSyncMsg(msg));
+      setSyncMsg('✓ Sincronizado');
+    } catch (err: any) {
+      setSyncMsg(`Error: ${err.message}`);
+    } finally {
+      setTimeout(() => { setSyncingId(null); setSyncMsg(''); }, 2500);
+    }
+  }
+
+  async function handleOpenCloudProject(path: string) {
+    if (downloadingPath) return;
+    setDownloadingPath(path);
+    try {
+      const file = await downloadProjectFromCloud(path);
+      const newId = await importProject(file);
+      router.push(`/project?id=${newId}`);
+    } catch (err: any) {
+      alert(`Error al descargar de la nube: ${err.message}`);
+      setDownloadingPath(null);
+    }
+  }
+
+  // Agrupar proyectos en la nube para mostrar solo la última versión por nombre de proyecto
+  const uniqueCloudProjects = useMemo(() => {
+    const map = new Map<string, CloudProject>();
+    cloudProjects.forEach(cp => {
+      // El nombre del proyecto termina en _YYYY-MM-DD.research
+      const baseName = cp.name.replace(/_\d{4}-\d{2}-\d{2}\.research$/, '');
+      const existing = map.get(baseName);
+      if (!existing || new Date(cp.updatedAt) > new Date(existing.updatedAt)) {
+        map.set(baseName, cp);
+      }
+    });
+    return Array.from(map.values());
+  }, [cloudProjects]);
+
   // ==== VISTA DE TÉRMINOS Y BIENVENIDA (Rediseño Centralizado) ====
-  if (!hasAcceptedTerms) {
+  if (isLoggedIn === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 relative bg-slate-50 overflow-y-auto py-12">
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(3,88,161,0.05)_0%,_transparent_50%),_radial-gradient(circle_at_30%_70%,_rgba(15,118,110,0.05)_0%,_transparent_50%)]" />
+      <div className="h-screen flex items-center justify-center bg-white">
+        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center relative overflow-y-auto" style={{
+        backgroundImage: "url('/fondo-2.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat"
+      }}>
+        {/* Overlay dark/light para asegurar legibilidad */}
+        <div className="absolute inset-0 bg-slate-900/40 z-0" />
         
-        <div className="card max-w-4xl w-full p-8 md:p-12 relative z-10 shadow-2xl animate-scale-in flex flex-col md:row gap-10 items-center bg-white/90 backdrop-blur-md border-white overflow-visible">
+        <div className="max-w-5xl w-full p-8 relative z-10 flex flex-col md:flex-row gap-12 items-center md:items-stretch mt-12 md:mt-0">
           
-          <div className="flex-1 text-center md:text-left">
-            <img src="/cualidoso.png" alt="Cualidoso Logo" className="w-40 h-auto mb-8 mx-auto md:mx-0 mix-blend-multiply drop-shadow-sm" />
-            <h1 className="text-4xl font-black mb-4 tracking-tight" style={{ color: 'var(--accent)' }}>Cualidoso</h1>
-            <p className="text-lg font-medium text-slate-600 mb-6 uppercase tracking-wider">Investigación Cualitativa para la Soberanía Sanitaria</p>
+          <div className="flex-1 text-center md:text-left flex flex-col justify-center">
+            <img src="/logo.png" alt="Cualidoso Logo" className="w-80 md:w-96 h-auto mb-6 mx-auto md:mx-0 drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]" />
+            <h1 className="text-6xl font-black mb-4 tracking-tight text-white drop-shadow-lg">Cualidoso 2.0</h1>
+            <p className="text-xl font-medium text-white/90 mb-6 uppercase tracking-wider drop-shadow-md">
+              Investigación cualitativa para todos y todas
+            </p>
             
-            <div className="space-y-4 text-slate-600 text-sm leading-relaxed">
+            <div className="space-y-4 text-white/90 text-base leading-relaxed max-w-xl mx-auto md:mx-0 bg-black/30 p-8 rounded-3xl backdrop-blur-md border border-white/10 shadow-2xl">
               <p>
-                <strong className="text-slate-900">Uso Gratuito y Privacidad Total:</strong> Esta plataforma es una herramienta de código abierto diseñada para democratizar el análisis cualitativo. Para mantener el acceso libre y proteger tu privacidad, <span className="text-accent font-bold" style={{ color: 'var(--accent)' }}>no guardamos tus datos en la nube</span>.
+                Cualidoso es una herramienta de software libre diseñada para democratizar el análisis cualitativo. Nuestro objetivo es brindar a investigadores, estudiantes y comunidades un entorno potente, seguro y accesible para estructurar sus hallazgos, desarrollar teorías y generar impacto social.
               </p>
               <p>
-                <strong className="text-slate-900">Almacenamiento Local Cifrado:</strong> Todo tu trabajo se almacena exclusivamente en la memoria local de tu navegador. Tu contraseña de acceso es la <strong className="text-slate-900">llave de cifrado</strong> que protege tus datos; sin ella, la información es inaccesible.
+                Ya sea que apliques Teoría Fundamentada, Fenomenología, Etnografía, IAP o Metacrítica, Cualidoso adapta sus herramientas metodológicas a tus necesidades sin perder rigor científico.
               </p>
-              <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 text-amber-900">
-                <strong className="text-amber-950 block mb-1">⚠️ Aviso de Seguridad y Respaldo:</strong> 
-                Debido a que el almacenamiento es local por disponibilidad de espacio y privacidad, tus avances pueden perderse si limpias los datos del navegador. Es <strong className="underline">obligatorio</strong> descargar y guardar periódicamente el archivo maestro <code className="bg-white px-1 rounded border">.research</code> para respaldar tu información.
-              </div>
             </div>
           </div>
 
-          <div className="w-full md:w-80 flex flex-col gap-6 flex-shrink-0">
-            <div className="bg-slate-100/50 p-6 rounded-2xl border border-slate-200 shadow-inner">
-              <h3 className="font-bold mb-4 text-slate-800 text-xs uppercase tracking-widest">Capacidades Analíticas</h3>
-              <ul className="space-y-3 text-xs text-slate-600">
-                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} /> Teoría Fundamentada y Etnografía</li>
-                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} /> Fenomenología e IAP</li>
-                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} /> Metacrítica de Breilh</li>
-                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} /> Matrices de Concurrencia</li>
+          <div className="w-full md:w-[400px] flex flex-col gap-6 flex-shrink-0 justify-center">
+            
+            {/* Tarjeta Free */}
+            <button 
+              onClick={() => router.push('/login?tier=free')}
+              className="bg-white/95 hover:bg-white backdrop-blur-xl p-8 rounded-[2rem] border border-white/50 shadow-2xl transition-all duration-300 hover:scale-[1.03] hover:shadow-accent/30 text-left group flex flex-col h-full"
+            >
+              <h3 className="text-2xl font-black mb-2 text-slate-800 group-hover:text-accent transition-colors">Versión para todos y todas</h3>
+              <p className="text-sm text-slate-600 mb-6 font-medium leading-relaxed">Uso gratuito y privacidad total. Regístrate y envía un correo solicitando autorización para acceder a las funciones avanzadas.</p>
+              <ul className="space-y-3 text-sm text-slate-500 mb-8 font-medium flex-1">
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-accent transition-colors"/> Todos los lentes metodológicos</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-accent transition-colors"/> Cifrado AES-256 local</li>
+                <li className="flex items-center gap-2 text-accent font-bold"><div className="w-1.5 h-1.5 rounded-full bg-accent transition-colors"/> Opción de pedir acceso a la Nube</li>
               </ul>
-            </div>
-
-            <button className="btn btn-primary text-base py-4 w-full shadow-lg hover:shadow-xl transition-all" onClick={acceptTerms}>
-              Aceptar e Iniciar Investigación
+              <div className="w-full py-4 bg-slate-100 rounded-2xl text-center text-sm font-bold text-slate-600 group-hover:bg-accent group-hover:text-white transition-colors">
+                Ingresar a versión libre
+              </div>
             </button>
-            <p className="text-[10px] text-center text-slate-400">Versión v1.0.0 — Software de Código Abierto</p>
+
+            {/* Tarjeta Premium */}
+            <button 
+              onClick={() => router.push('/login?tier=premium')}
+              className="bg-accent hover:bg-accent-dark backdrop-blur-xl p-8 rounded-[2rem] border border-accent/50 shadow-2xl transition-all duration-300 hover:scale-[1.03] hover:shadow-accent/50 text-left group flex flex-col h-full relative"
+            >
+              <div className="absolute -top-4 -right-2 bg-gradient-to-r from-amber-300 to-amber-500 text-amber-950 text-[10px] font-black uppercase px-4 py-1.5 rounded-full shadow-lg transform rotate-6 border border-amber-200">
+                Con más cositas
+              </div>
+              <h3 className="text-2xl font-black mb-2 text-white">Versión Premium</h3>
+              <p className="text-sm text-white/80 mb-6 font-medium leading-relaxed">Máxima seguridad con respaldo automático en la nube y sincronización fluida entre equipos para usuarios autorizados.</p>
+              <ul className="space-y-3 text-sm text-white/70 mb-8 font-medium flex-1">
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-white/30 group-hover:bg-white transition-colors"/> Respaldo en Supabase Cloud</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-white/30 group-hover:bg-white transition-colors"/> Sincronización multi-dispositivo</li>
+                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-white/30 group-hover:bg-white transition-colors"/> Soporte prioritario</li>
+              </ul>
+              <div className="w-full py-4 bg-white/10 rounded-2xl text-center text-sm font-bold text-white border border-white/20 group-hover:bg-white group-hover:text-accent transition-colors">
+                Ingresar a versión Premium
+              </div>
+            </button>
+
           </div>
         </div>
       </div>
@@ -192,29 +298,46 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-primary)' }}>
       {/* Hero Header */}
-      <header className="border-b sticky top-0 z-50 shadow-sm" style={{ borderColor: 'var(--border)', background: '#ffffff' }}>
+      <header className="border-b sticky top-0 z-50 shadow-sm transition-colors duration-300" 
+        style={{ 
+          borderColor: isPremium ? 'transparent' : 'var(--border)', 
+          background: isPremium ? 'linear-gradient(90deg, #1e293b, #0f172a)' : '#ffffff',
+          color: isPremium ? '#ffffff' : 'inherit'
+        }}>
         <div className="w-full px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <img src="/cualidoso.png" alt="Cualidoso" className="w-12 h-auto object-contain mix-blend-multiply" />
+            <img src="/logo.png" alt="Cualidoso" className="w-28 md:w-32 h-auto object-contain drop-shadow-sm" />
             <div>
-              <h1 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>Cualidoso <span className="text-xs font-normal" style={{ color: 'var(--text-muted)' }}>v1.0.0</span></h1>
-              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Análisis Cualitativo para la Soberanía Sanitaria</p>
+              <h1 className="font-bold text-lg" style={{ color: isPremium ? '#fff' : 'var(--text-primary)' }}>Cualidoso <span className="text-xs font-normal opacity-70">v 2.0</span></h1>
+              <p className="text-xs" style={{ color: isPremium ? '#94a3b8' : 'var(--text-secondary)' }}>Análisis Cualitativo para la Soberanía Sanitaria</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs px-3 py-1 rounded-full font-medium hidden sm:block" style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid rgba(3,88,161,0.2)' }}>
-              ● Entorno Local Seguro
-            </span>
-            <div className="w-px h-6 mx-2" style={{ background: 'var(--border)' }} />
-            <span className="text-xs font-semibold mr-2" style={{ color: 'var(--text-secondary)' }}>
-              Hola, <span style={{ color: 'var(--accent)' }}>{username}</span>
+            {isPremium ? (
+              <span className="text-xs px-3 py-1 rounded-full font-bold hidden sm:flex items-center gap-1.5" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff' }}>
+                <Star size={11} fill="currentColor"/> Con más cositas
+              </span>
+            ) : (
+              <span className="text-xs px-3 py-1 rounded-full font-medium hidden sm:block" style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid rgba(3,88,161,0.2)' }}>
+                ● Entorno Local Seguro
+              </span>
+            )}
+            <div className="w-px h-6 mx-2" style={{ background: isPremium ? 'rgba(255,255,255,0.2)' : 'var(--border)' }} />
+            <span className="text-xs font-semibold mr-2" style={{ color: isPremium ? '#cbd5e1' : 'var(--text-secondary)' }}>
+              Hola, <span style={{ color: isPremium ? '#fff' : 'var(--accent)' }}>{username}</span>
             </span>
             {isAdmin && (
-              <button className="btn btn-ghost text-xs" onClick={() => router.push('/admin')}>
+              <button 
+                className={isPremium ? "flex items-center gap-1.5 px-3 py-2 rounded-md text-white hover:bg-white/10 transition-colors text-xs font-bold" : "btn btn-ghost text-xs"}
+                onClick={() => router.push('/admin')}
+              >
                 <Shield size={14} /> Admin
               </button>
             )}
-            <button className="btn btn-ghost text-xs" onClick={handleLogout} title="Cerrar sesión">
+            <button 
+              className={isPremium ? "flex items-center gap-1.5 px-3 py-2 rounded-md text-white hover:bg-red-500/20 hover:text-red-300 transition-colors text-xs font-bold" : "btn btn-ghost text-xs"}
+              onClick={handleLogout} title="Cerrar sesión"
+            >
               <LogOut size={14} /> Salir
             </button>
           </div>
@@ -266,25 +389,49 @@ export default function HomePage() {
         </div>
 
         {/* Información de Respaldo y Almacenamiento */}
-        <div className="mb-8 p-6 rounded-2xl border flex flex-col md:flex-row items-center gap-6 animate-fade-in" 
-          style={{ background: 'var(--accent-light)', borderColor: 'rgba(3,88,161,0.15)' }}>
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: '#fff', color: 'var(--accent)' }}>
-            <Shield size={24} />
+        {isPremium ? (
+          <div className="mb-8 p-6 rounded-2xl border flex flex-col md:flex-row items-center gap-6 animate-fade-in shadow-md" 
+            style={{ background: 'linear-gradient(135deg, #fef3c7, #fef08a)', borderColor: '#fde68a' }}>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm bg-amber-500 text-white">
+              <CloudUpload size={24} />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="font-bold text-sm mb-1 text-amber-900">Modo Premium: Nube Cifrada Activa</h3>
+              <p className="text-xs leading-relaxed text-amber-800">
+                Tu trabajo cuenta con <strong>cifrado AES-256 local</strong> y se almacena bajo el mismo cifrado en la nube de Supabase. 
+                Al usar el botón <strong>Sync Cloud</strong>, creas una copia maestra respaldada y protegida. 
+                Tus datos mantienen total privacidad.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button className="btn btn-ghost text-xs bg-white text-amber-900 hover:bg-amber-50 border border-amber-200" onClick={() => window.open('https://github.com/doccpaez4/Cualidoso', '_blank')}>
+                <BookOpen size={14} /> Documentación
+              </button>
+            </div>
           </div>
-          <div className="flex-1 text-center md:text-left">
-            <h3 className="font-bold text-sm mb-1" style={{ color: 'var(--accent)' }}>Tu trabajo es privado, cifrado y 100% local</h3>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              Para garantizar tu seguridad y tranquilidad, Cualidoso <strong>no guarda datos en la nube</strong>. Todo se almacena exclusivamente en tu navegador mediante <strong>cifrado AES-256</strong>, utilizando tu contraseña como llave maestra. 
-              Si borras el historial o cambias de equipo, tus proyectos no estarán disponibles. 
-              Es <strong style={{ color: 'var(--accent)' }}>vital descargar el archivo .research</strong> periódicamente como respaldo maestro cifrado.
-            </p>
+        ) : (
+          <div className="mb-8 p-6 rounded-2xl border flex flex-col md:flex-row items-center gap-6 animate-fade-in" 
+            style={{ background: 'var(--accent-light)', borderColor: 'rgba(3,88,161,0.15)' }}>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: '#fff', color: 'var(--accent)' }}>
+              <Shield size={24} />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="font-bold text-sm mb-1" style={{ color: 'var(--accent)' }}>Tu trabajo es privado, cifrado y 100% local</h3>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Para garantizar tu seguridad y tranquilidad, Cualidoso <strong>no guarda datos en la nube</strong>. Todo se almacena exclusivamente en tu navegador mediante <strong>cifrado AES-256</strong>. 
+                Es <strong style={{ color: 'var(--accent)' }}>vital descargar el archivo .research</strong> periódicamente como respaldo maestro cifrado.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 justify-center">
+              <button className="btn btn-ghost text-xs bg-white text-slate-700 w-full" onClick={() => window.open('https://github.com/doccpaez4/Cualidoso', '_blank')}>
+                <BookOpen size={14} /> Documentación
+              </button>
+              <button className="btn text-xs bg-amber-500 hover:bg-amber-600 text-white font-bold border-none w-full whitespace-nowrap" onClick={() => window.open('mailto:doccpaez4@gmail.com?subject=Solicitud%20Premium%20Cualidoso')}>
+                <Star size={14} fill="currentColor" className="mr-1"/> Quiero más cositas
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button className="btn btn-ghost text-xs bg-white" onClick={() => window.open('https://github.com/doccpaez4/Cualidoso', '_blank')}>
-              <BookOpen size={14} /> Documentación
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Lista de proyectos */}
         <div className="bg-white rounded-xl shadow-sm border p-6" style={{ borderColor: 'var(--border)' }}>
@@ -314,11 +461,9 @@ export default function HomePage() {
                 return (
                   <div
                     key={project.id}
-                    className="flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer group p-4 rounded-xl transition-all"
-                    style={{ border: '1px solid var(--border)', '--hover-bg': 'var(--bg-hover)' } as React.CSSProperties}
+                    className="flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer group p-4 rounded-xl transition-all border border-transparent hover:border-accent/40 hover:bg-slate-50 shadow-sm hover:shadow-md"
+                    style={{ border: '1px solid var(--border)' }}
                     onClick={() => router.push(`/project?id=${project.id}`)}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(3,88,161,0.4)'; e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'transparent'; }}
                   >
                     {/* Ícono del lente */}
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -343,18 +488,112 @@ export default function HomePage() {
                     </div>
 
                     {/* Acciones */}
-                    <div className="flex items-center gap-2 mt-3 sm:mt-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="btn btn-ghost text-xs hidden sm:flex" title="Descargar Copia" onClick={e => downloadProject(e, project.id!)}>
-                        <Download size={14} /> Exportar
-                      </button>
-                      <button className="btn-icon" title="Eliminar proyecto" onClick={e => deleteProject(e, project.id!)}>
-                        <Trash2 size={16} className="text-red-500" />
-                      </button>
-                      <ChevronRight size={20} className="hidden sm:block text-gray-400 ml-2" />
+                    <div className="flex items-center gap-2 mt-3 sm:mt-0" onClick={e => e.stopPropagation()}>
+                      {deletingId === project.id ? (
+                        <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
+                          <span className="text-[10px] font-bold text-red-600 mr-1 uppercase">¿Seguro?</span>
+                          <button 
+                            className="px-3 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg hover:bg-red-700 shadow-sm"
+                            onClick={() => confirmDelete(project.id!)}
+                          >
+                            Eliminar
+                          </button>
+                          <button 
+                            className="px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-lg hover:bg-gray-200"
+                            onClick={() => setDeletingId(null)}
+                          >
+                            No
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 sm:opacity-40 group-hover:opacity-100 transition-opacity duration-200">
+                          {isPremium && (
+                            <button
+                              className="btn btn-ghost text-xs hidden sm:flex items-center gap-1"
+                              title="Sincronizar con la nube"
+                              onClick={e => handleSyncToCloud(e, project.id!)}
+                              disabled={syncingId === project.id}
+                              style={syncingId === project.id ? { color: '#f59e0b' } : {}}
+                            >
+                              <Cloud size={14} />
+                              {syncingId === project.id ? syncMsg || 'Subiendo...' : 'Sync Cloud'}
+                            </button>
+                          )}
+                          <button className="btn btn-ghost text-xs hidden sm:flex" title="Descargar Copia" onClick={e => downloadProject(e, project.id!)}>
+                            <Download size={14} /> Exportar
+                          </button>
+                          <button className="btn-icon text-gray-400 hover:text-red-500 hover:bg-red-50" title="Eliminar proyecto" onClick={() => setDeletingId(project.id!)}>
+                            <Trash2 size={16} />
+                          </button>
+                          <ChevronRight size={20} className="hidden sm:block text-gray-400 ml-2" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Proyectos en la Nube */}
+          {isPremium && (uniqueCloudProjects.length > 0 || loadingCloud) && (
+            <div className="mt-8 pt-8 border-t" style={{ borderColor: 'var(--border)' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-semibold flex items-center gap-2 text-amber-600">
+                  <Cloud size={18} /> Respaldos en la Nube
+                </h3>
+                <span className="text-xs font-medium px-2 py-1 bg-amber-50 text-amber-600 rounded">
+                  {uniqueCloudProjects.length} disponibles
+                </span>
+              </div>
+
+              {loadingCloud ? (
+                <div className="py-6 flex justify-center">
+                  <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {uniqueCloudProjects.map(cp => {
+                    const displayName = cp.name.replace(/_\d{4}-\d{2}-\d{2}\.research$/, '').replace(/_/g, ' ') || cp.name;
+                    const isDownloading = downloadingPath === cp.path;
+                    return (
+                      <div
+                        key={cp.path}
+                        className="flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer group p-4 rounded-xl transition-all border border-amber-200 bg-white hover:bg-amber-50"
+                        onClick={() => handleOpenCloudProject(cp.path)}
+                      >
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-amber-100 text-amber-600 border border-amber-200">
+                          <CloudUpload size={20} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-lg truncate mb-1 text-amber-900">
+                            {displayName}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span className="text-xs px-2.5 py-1 rounded-md font-medium bg-amber-100 text-amber-800">
+                              Copia de Seguridad
+                            </span>
+                            <span className="flex items-center gap-1 text-xs text-amber-700/80">
+                              <Clock size={12} /> {new Date(cp.updatedAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-3 sm:mt-0">
+                          {isDownloading ? (
+                            <span className="text-sm font-bold text-amber-600 flex items-center gap-2">
+                              <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" /> Descargando...
+                            </span>
+                          ) : (
+                            <span className="text-sm font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                              Restaurar <ChevronRight size={16} />
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -23,6 +23,7 @@ export default function TextViewer() {
   const [annotations, setAnnotations] = useState<AnnotationWithCode[]>([]);
   const [memoPopup, setMemoPopup] = useState<MemoPopup | null>(null);
   const [memoText, setMemoText] = useState('');
+  const [codeSearch, setCodeSearch] = useState('');
   const [selectionInfo, setSelectionInfo] = useState<{ start: number; end: number; text: string; x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -49,13 +50,31 @@ export default function TextViewer() {
 
   useEffect(() => { loadAnnotations(); }, [loadAnnotations]);
 
-  // Manejar selección de texto
-  const handleMouseUp = useCallback(() => {
+  // Manejar selección de texto globalmente para mayor fluidez (incluso si el mouse sale del div)
+  const handleMouseUp = useCallback((e: MouseEvent) => {
+    // Ignorar clics dentro del propio popup de códigos o de memos
+    if ((e.target as HTMLElement).closest('.card')) return;
+
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || !containerRef.current) return;
+    if (!selection || selection.rangeCount === 0 || !containerRef.current) {
+      setSelectionInfo(null);
+      return;
+    }
+
+    // Si la selección o clic no está dentro del contenedor de texto, limpiar
+    if (!containerRef.current.contains(selection.anchorNode)) {
+      setSelectionInfo(null);
+      return;
+    }
+
     const range = selection.getRangeAt(0);
     const text = selection.toString().trim();
-    if (!text || text.length < 2) return;
+    
+    // Si fue un clic simple o selección vacía, ocultar popup
+    if (!text || text.length < 2) {
+      setSelectionInfo(null);
+      return;
+    }
 
     // Calcular offset dentro del texto completo
     const preRange = document.createRange();
@@ -66,27 +85,50 @@ export default function TextViewer() {
 
     // Obtener coordenadas para el popup
     const rect = range.getBoundingClientRect();
-
     setSelectionInfo({ start, end, text, x: rect.left + rect.width / 2, y: rect.bottom + 8 });
   }, []);
+
+  useEffect(() => {
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => document.removeEventListener('mouseup', handleMouseUp);
+  }, [handleMouseUp]);
 
   // Crear anotación con el código indicado
   async function annotateSelection(codeId: number) {
     if (!selectionInfo || !activeDocumentId || !project) return;
 
-    await addEncryptedAnnotation({
-      documentId: activeDocumentId,
-      projectId: project.id!,
-      codeId,
-      start: selectionInfo.start,
-      end: selectionInfo.end,
-      text: selectionInfo.text,
-      createdAt: new Date(),
-    });
-    setSelectionInfo(null);
-    window.getSelection()?.removeAllRanges();
-    await loadAnnotations();
+    try {
+      await addEncryptedAnnotation({
+        documentId: activeDocumentId,
+        projectId: project.id!,
+        codeId,
+        start: selectionInfo.start,
+        end: selectionInfo.end,
+        text: selectionInfo.text,
+        createdAt: new Date(),
+      });
+      setSelectionInfo(null);
+      setCodeSearch('');
+      window.getSelection()?.removeAllRanges();
+      await loadAnnotations();
+    } catch (err: any) {
+      console.error('Error al codificar:', err);
+      alert(`No se pudo guardar la codificación: ${err.message}`);
+      setSelectionInfo(null);
+      setCodeSearch('');
+    }
   }
+
+  // Escuchar evento global desde el sidebar para aplicar código
+  useEffect(() => {
+    const handleApplyCode = (e: any) => {
+      if (selectionInfo) {
+        annotateSelection(e.detail);
+      }
+    };
+    window.addEventListener('apply-code', handleApplyCode);
+    return () => window.removeEventListener('apply-code', handleApplyCode);
+  }, [selectionInfo, annotateSelection]);
 
   async function saveMemo() {
     if (!memoText.trim() || !memoPopup || !project) return;
@@ -213,38 +255,60 @@ export default function TextViewer() {
       {/* Texto */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto px-8 py-6 leading-8 text-base outline-none"
+        className="flex-1 overflow-y-auto px-8 py-6 leading-8 text-base outline-none selection:bg-accent/20"
         style={{ color: 'var(--text-primary)', userSelect: 'text', fontFamily: 'Georgia, serif', fontSize: '15px', whiteSpace: 'pre-wrap' }}
-        onMouseUp={handleMouseUp}
       >
         {rendered}
       </div>
 
       {/* Popup de selección contextual para codificar */}
-      {selectionInfo && codes.length > 0 && (
+      {selectionInfo && (
         <div 
-          className="fixed z-50 card shadow-2xl animate-scale-in"
+          className="fixed z-50 card shadow-2xl animate-scale-in bg-white border border-gray-200"
           style={{ 
             left: Math.max(10, Math.min(selectionInfo.x - 120, window.innerWidth - 260)), 
             top: selectionInfo.y, 
             width: 260,
             padding: '12px'
           }}
+          onMouseDown={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-gray-500">¿Qué código aplicar?</span>
-            <button className="btn-icon" onClick={() => { setSelectionInfo(null); window.getSelection()?.removeAllRanges(); }}><X size={13}/></button>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Codificar</span>
+            <button className="btn-icon" onClick={() => { setSelectionInfo(null); setCodeSearch(''); window.getSelection()?.removeAllRanges(); }}><X size={13}/></button>
           </div>
-          <div className="max-h-48 overflow-y-auto flex flex-col gap-1">
-            {codes.map(c => (
-              <button key={c.id} 
-                className="text-left px-2 py-1.5 rounded text-xs transition-colors hover:bg-gray-100 flex items-center gap-2"
-                onClick={() => annotateSelection(c.id!)}>
-                <div className="w-2 h-2 rounded-full" style={{ background: c.color }} />
-                <span className="truncate flex-1">{c.name}</span>
-              </button>
-            ))}
-          </div>
+          {codes.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {codes.length > 7 && (
+                <input 
+                  type="text" 
+                  placeholder="Buscar código..." 
+                  className="w-full text-xs px-2 py-1.5 border rounded bg-gray-50 focus:bg-white focus:ring-1 focus:ring-accent outline-none transition-all"
+                  value={codeSearch}
+                  onChange={e => setCodeSearch(e.target.value)}
+                  autoFocus
+                />
+              )}
+              <div className="max-h-48 overflow-y-auto flex flex-col gap-1">
+                {codes.filter(c => c.name.toLowerCase().includes(codeSearch.toLowerCase())).map(c => (
+                  <button key={c.id} 
+                    className="text-left px-2 py-1.5 rounded text-xs transition-colors hover:bg-gray-100 flex items-center gap-2 group"
+                    onClick={() => annotateSelection(c.id!)}>
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm" style={{ background: c.color }} />
+                    <span className="truncate flex-1 font-medium text-gray-700 group-hover:text-gray-900">{c.name}</span>
+                  </button>
+                ))}
+                {codes.filter(c => c.name.toLowerCase().includes(codeSearch.toLowerCase())).length === 0 && (
+                  <p className="text-[10px] text-gray-400 text-center py-2 italic">Sin resultados</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-xs text-center text-amber-600 bg-amber-50 p-2 rounded border border-amber-100">
+              <p>No tienes códigos creados.</p>
+              <p className="font-semibold mt-1">Crea un código en el panel lateral izquierdo primero.</p>
+            </div>
+          )}
         </div>
       )}
 

@@ -29,7 +29,7 @@ export default function WorkCanvas() {
   }
 
   return (
-    <div className="canvas-area flex flex-col overflow-hidden">
+    <div className="canvas-area h-full w-full flex flex-col overflow-hidden">
       {/* Document title bar */}
       <div className="flex-shrink-0 px-4 py-2 border-b flex items-center gap-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-secondary)' }}>
         <span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{doc.name}</span>

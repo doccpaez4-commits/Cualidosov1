@@ -18,6 +18,7 @@ export default function CorpusSidebar() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(true);
   const [storageUsage, setStorageUsage] = useState<number>(0);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (navigator.storage && navigator.storage.estimate) {
@@ -30,7 +31,7 @@ export default function CorpusSidebar() {
   }, [documents.length]);
 
   // Consulta de anotaciones para conteo (vía useMemo para estabilidad)
-  const rawAnnotations = useLiveQuery(
+  const rawAnnotations = useLiveQuery<import('@/types').Annotation[]>(
     () => project?.id ? db.annotations.where('projectId').equals(project.id).toArray() : Promise.resolve([]),
     [project?.id]
   );
@@ -76,13 +77,12 @@ export default function CorpusSidebar() {
     multiple: true,
   });
 
-  async function deleteDocument(e: React.MouseEvent, id: number) {
-    e.stopPropagation();
-    if (!confirm('¿Eliminar este documento y todas sus anotaciones?')) return;
+  async function confirmDeleteDocument(id: number) {
     await db.annotations.where('documentId').equals(id).delete();
     await db.documents.delete(id);
     await refreshDocuments();
     if (activeDocumentId === id) setActiveDocumentId(null);
+    setDeletingId(null);
   }
 
   const txtDocs = documents.filter(d => d.type === 'txt' || d.type === 'pdf');
@@ -141,7 +141,11 @@ export default function CorpusSidebar() {
                 active={activeDocumentId === doc.id}
                 count={annotationCounts.get(doc.id!) || 0}
                 onClick={() => setActiveDocumentId(doc.id!)}
-                onDelete={e => deleteDocument(e, doc.id!)} />
+                onDelete={() => setDeletingId(doc.id!)}
+                deleting={deletingId === doc.id}
+                onCancel={() => setDeletingId(null)}
+                confirmDelete={() => confirmDeleteDocument(doc.id!)}
+              />
             ))}
           </div>
         )}
@@ -157,7 +161,11 @@ export default function CorpusSidebar() {
                 active={activeDocumentId === doc.id}
                 count={annotationCounts.get(doc.id!) || 0}
                 onClick={() => setActiveDocumentId(doc.id!)}
-                onDelete={e => deleteDocument(e, doc.id!)} />
+                onDelete={() => setDeletingId(doc.id!)}
+                deleting={deletingId === doc.id}
+                onCancel={() => setDeletingId(null)}
+                confirmDelete={() => confirmDeleteDocument(doc.id!)}
+              />
             ))}
           </div>
         )}
@@ -195,9 +203,10 @@ export default function CorpusSidebar() {
   );
 }
 
-function DocItem({ doc, active, count, onClick, onDelete }: {
+function DocItem({ doc, active, count, onClick, onDelete, deleting, onCancel, confirmDelete }: {
   doc: Document; active: boolean; count: number;
-  onClick: () => void; onDelete: (e: React.MouseEvent) => void;
+  onClick: () => void; onDelete: () => void;
+  deleting: boolean; onCancel: () => void; confirmDelete: () => void;
 }) {
   const isImage = doc.type === 'image';
   return (
@@ -217,9 +226,16 @@ function DocItem({ doc, active, count, onClick, onDelete }: {
           {Math.round(doc.size / 1024)}kb
         </span>
       )}
-      <button className="btn-icon opacity-0 group-hover:opacity-100 flex-shrink-0" onClick={onDelete}>
-        <Trash2 size={12} style={{ color: 'var(--rose)' }} />
-      </button>
+      {deleting ? (
+        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+          <button className="text-[9px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold hover:bg-red-700" onClick={confirmDelete}>OK</button>
+          <button className="text-[9px] bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded font-bold hover:bg-gray-300" onClick={onCancel}>No</button>
+        </div>
+      ) : (
+        <button className="btn-icon opacity-0 group-hover:opacity-100 flex-shrink-0" onClick={e => { e.stopPropagation(); onDelete(); }}>
+          <Trash2 size={12} style={{ color: 'var(--rose)' }} />
+        </button>
+      )}
     </div>
   );
 }

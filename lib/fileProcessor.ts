@@ -33,10 +33,18 @@ export async function processPdf(file: File): Promise<string> {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item) => ('str' in item ? item.str : ''))
-      .join(' ');
-    textPages.push(pageText);
+    let pageText = '';
+    for (const item of textContent.items) {
+      if ('str' in item) {
+        pageText += item.str;
+        if (item.hasEOL) {
+          pageText += '\n';
+        } else if (item.str.trim() !== '' && !pageText.endsWith(' ')) {
+          pageText += ' ';
+        }
+      }
+    }
+    textPages.push(pageText.trim());
   }
 
   return textPages.join('\n\n');

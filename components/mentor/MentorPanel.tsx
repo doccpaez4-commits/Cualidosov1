@@ -107,7 +107,7 @@ export default function MentorPanel({ project, selectedAnnotationId, isOpen, onT
   }
 
   return (
-    <aside className="sidebar-right flex flex-col h-full" style={{ minWidth: 280, maxWidth: 380 }}>
+    <aside className="sidebar-right flex flex-col h-full border-l-0">
       {/* Header del mentor */}
       <div className="section-header flex-shrink-0">
         <div className="flex items-center gap-2">

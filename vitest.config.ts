@@ -14,7 +14,7 @@ export default defineConfig({
       include: ['lib/**/*.ts', 'components/**/*.tsx'],
       exclude: ['node_modules/', '.next/', 'setupTests.ts']
     },
-    include: ['__tests__/**/*.test.ts'],
+    include: ['__tests__/**/*.test.{ts,tsx}'],
     alias: {
       '@': path.resolve(__dirname, './')
     }
